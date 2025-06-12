@@ -11,9 +11,9 @@ Developing a mobile app to help reduce food waste by scanning products and track
 - [x] Configure pubspec.yaml with dependencies
 - [x] Set up folder architecture
 - [x] Create basic main.dart with Firebase initialization
-- [ ] Set up Firebase project and configuration
-- [ ] Configure Android/iOS Firebase integration
-- [ ] Set up development environment
+- [x] Set up Firebase project and configuration
+- [x] Configure Android/iOS Firebase integration
+- [x] Set up development environment
 
 ### 1.2 Core Architecture
 - [ ] Create app theme and design system
