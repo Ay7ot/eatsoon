@@ -1,5 +1,6 @@
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/home/presentation/screens/home_screen.dart';
+import 'package:eat_soon/features/inventory/presentation/screens/inventory_screen.dart';
 import 'package:eat_soon/features/shell/widgets/custom_nav_bar_item.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,7 @@ class _AppShellState extends State<AppShell> {
   // Define the pages for the navigation (5 tabs now including scan)
   final List<Widget> _pages = [
     const HomeScreen(),
-    const Center(child: Text('Inventory Screen')),
+    const InventoryScreen(),
     const Center(child: Text('Scan Screen')), // Scan is now a regular tab
     const Center(child: Text('Recipes Screen')),
     const Center(child: Text('Profile Screen')),
