@@ -1,6 +1,7 @@
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/home/presentation/screens/home_screen.dart';
 import 'package:eat_soon/features/inventory/presentation/screens/inventory_screen.dart';
+import 'package:eat_soon/features/scanner/presentation/screens/scan_screen.dart';
 import 'package:eat_soon/features/shell/widgets/custom_nav_bar_item.dart';
 import 'package:flutter/material.dart';
 
@@ -8,10 +9,10 @@ class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  State<AppShell> createState() => AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
 
@@ -19,7 +20,7 @@ class _AppShellState extends State<AppShell> {
   final List<Widget> _pages = [
     const HomeScreen(),
     const InventoryScreen(),
-    const Center(child: Text('Scan Screen')), // Scan is now a regular tab
+    const ScanScreen(), // Scan is now a regular tab
     const Center(child: Text('Recipes Screen')),
     const Center(child: Text('Profile Screen')),
   ];
@@ -33,7 +34,7 @@ class _AppShellState extends State<AppShell> {
     {'icon': 'assets/icons/profile.svg', 'label': 'Profile'},
   ];
 
-  void _onItemTapped(int index) {
+  void onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
       _pageController.animateToPage(
@@ -97,7 +98,7 @@ class _AppShellState extends State<AppShell> {
                         svgPath: item['icon'],
                         label: item['label'],
                         isSelected: _selectedIndex == index,
-                        onTap: () => _onItemTapped(index),
+                        onTap: () => onItemTapped(index),
                       );
                     }).toList(),
               ),

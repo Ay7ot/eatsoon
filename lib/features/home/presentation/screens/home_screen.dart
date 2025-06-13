@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
+import 'package:eat_soon/features/shell/app_shell.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,7 +22,7 @@ class HomeScreen extends StatelessWidget {
               _buildStatisticsCards(),
               const SizedBox(height: 32),
               // Quick Actions
-              _buildQuickActions(),
+              _buildQuickActions(context),
               const SizedBox(height: 32),
               // Recent Activity
               _buildRecentActivity(),
@@ -80,92 +81,90 @@ class HomeScreen extends StatelessWidget {
     required Color iconBackgroundColor,
     required Widget icon,
   }) {
-    return Expanded(
-      child: Container(
-        height: 115,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(14.4),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      height: 115,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14.4),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  color: Color(0xFF6B7280),
+                  height: 1.2,
+                ),
+              ),
+              Container(
+                width: 24,
+                height: 24,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: iconBackgroundColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: icon,
+              ),
+            ],
+          ),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  style: const TextStyle(
+                  value,
+                  style: TextStyle(
                     fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                    height: 1.2,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 26,
+                    color: valueColor,
+                    height: 1.1,
                   ),
-                ),
-                Container(
-                  width: 24,
-                  height: 24,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: iconBackgroundColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: icon,
                 ),
               ],
             ),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 26,
-                      color: valueColor,
-                      height: 1.1,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              color: valueColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2),
             ),
-            Container(
-              height: 3,
-              decoration: BoxDecoration(
-                color: valueColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: FractionallySizedBox(
-                widthFactor: title.contains('Expiring') ? 0.3 : 0.7,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: valueColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+            child: FractionallySizedBox(
+              widthFactor: title.contains('Expiring') ? 0.3 : 0.7,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: valueColor,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -200,7 +199,14 @@ class HomeScreen extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14.4),
-                  onTap: () {},
+                  onTap: () {
+                    // Find the AppShell and switch to scan tab (index 2)
+                    final appShell =
+                        context.findAncestorStateOfType<AppShellState>();
+                    if (appShell != null) {
+                      appShell.onItemTapped(2); // Switch to scan tab
+                    }
+                  },
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
