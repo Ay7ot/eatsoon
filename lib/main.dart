@@ -22,12 +22,17 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Activate App Check
-  await FirebaseAppCheck.instance.activate(
-    // Use the debug provider for development purposes
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-  );
+  // Activate App Check with error handling
+  try {
+    await FirebaseAppCheck.instance.activate(
+      // Use the debug provider for development purposes
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
+    );
+  } catch (e) {
+    // App Check activation failed, but we can continue without it in development
+    debugPrint('App Check activation failed: $e');
+  }
 
   runApp(const EatSoonApp());
 }
@@ -46,7 +51,7 @@ class EatSoonApp extends StatelessWidget {
         title: 'Eat Soon',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const SplashScreen(),
+        home: const AuthWrapper(),
         // routes: AppRouter.routes, // Will be defined later
       ),
     );

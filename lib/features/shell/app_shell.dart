@@ -2,11 +2,16 @@ import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/home/presentation/screens/home_screen.dart';
 import 'package:eat_soon/features/inventory/presentation/screens/inventory_screen.dart';
 import 'package:eat_soon/features/scanner/presentation/screens/scan_screen.dart';
+import 'package:eat_soon/features/recipes/presentation/screens/recipes_screen.dart';
+import 'package:eat_soon/features/profile/presentation/screens/profile_screen.dart';
 import 'package:eat_soon/features/shell/widgets/custom_nav_bar_item.dart';
 import 'package:flutter/material.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
+
+  // Global key to access AppShell state from anywhere
+  static final GlobalKey<AppShellState> shellKey = GlobalKey<AppShellState>();
 
   @override
   State<AppShell> createState() => AppShellState();
@@ -21,8 +26,8 @@ class AppShellState extends State<AppShell> {
     const HomeScreen(),
     const InventoryScreen(),
     const ScanScreen(), // Scan is now a regular tab
-    const Center(child: Text('Recipes Screen')),
-    const Center(child: Text('Profile Screen')),
+    const RecipesScreen(),
+    const ProfileScreen(),
   ];
 
   // Navigation items data
@@ -33,6 +38,13 @@ class AppShellState extends State<AppShell> {
     {'icon': 'assets/icons/recipes.svg', 'label': 'Recipes'},
     {'icon': 'assets/icons/profile.svg', 'label': 'Profile'},
   ];
+
+  // Method to navigate to a specific tab from external widgets
+  void navigateToTab(int index) {
+    if (index >= 0 && index < _pages.length) {
+      onItemTapped(index);
+    }
+  }
 
   void onItemTapped(int index) {
     setState(() {

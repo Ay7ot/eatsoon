@@ -21,8 +21,15 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _status == AuthStatus.authenticated;
 
   AuthProvider() {
+    // Check current auth state immediately
+    _initializeAuthState();
     // Listen to auth state changes
     _authService.authStateChanges.listen(_onAuthStateChanged);
+  }
+
+  void _initializeAuthState() {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    _onAuthStateChanged(currentUser);
   }
 
   void _onAuthStateChanged(User? user) {
@@ -175,4 +182,3 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 }
- 

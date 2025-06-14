@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:eat_soon/features/shell/app_shell.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -44,28 +45,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'logout') {
-                await Provider.of<AuthProvider>(
-                  context,
-                  listen: false,
-                ).signOut();
+          GestureDetector(
+            onTap: () {
+              // Navigate to profile tab (index 4) using AppShell navigation
+              final shellState = AppShell.shellKey.currentState;
+              if (shellState != null) {
+                shellState.navigateToTab(4); // Profile tab is at index 4
               }
             },
-            itemBuilder:
-                (BuildContext context) => [
-                  PopupMenuItem<String>(
-                    value: 'logout',
-                    child: Row(
-                      children: const [
-                        Icon(Icons.logout, color: AppTheme.textPrimaryColor),
-                        SizedBox(width: 8),
-                        Text('Logout'),
-                      ],
-                    ),
-                  ),
-                ],
             child: Container(
               margin: const EdgeInsets.only(right: 10.0),
               padding: const EdgeInsets.all(8.0),

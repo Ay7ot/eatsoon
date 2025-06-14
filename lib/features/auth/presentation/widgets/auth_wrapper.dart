@@ -17,7 +17,7 @@ class AuthWrapper extends StatelessWidget {
           case AuthStatus.loading:
             return const SplashScreen();
           case AuthStatus.authenticated:
-            return const AppShell();
+            return AppShell(key: AppShell.shellKey);
           case AuthStatus.unauthenticated:
             return const LoginScreen();
         }
