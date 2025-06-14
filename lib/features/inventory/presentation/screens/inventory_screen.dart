@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:eat_soon/core/theme/app_theme.dart';
-import 'package:eat_soon/core/theme/figma_colors.dart';
-import 'package:eat_soon/features/home/models/food_item.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
+import 'package:eat_soon/core/theme/figma_colors.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -14,125 +11,206 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   String selectedFilter = 'All Items';
-  bool isSearchVisible = false;
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
+  bool showSortOptions = false;
+  String sortBy = 'expiration'; // 'expiration', 'name', 'category'
+  Set<String> selectedCategories = {};
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  DateTime _dateOnly(DateTime dt) {
+    return DateTime(dt.year, dt.month, dt.day);
   }
 
-  // Dummy data for inventory
-  static final List<FoodItem> dummyInventory = [
-    // Uncomment to see the inventory with items
-    FoodItem(
-      id: '1',
-      name: 'Milk',
-      description: '1L Carton',
-      imageUrl: '',
-      expirationDate: DateTime.now(),
-      status: FoodItemStatus.expiringToday,
-    ),
-    FoodItem(
-      id: '2',
-      name: 'Spinach',
-      description: '250g Bag',
-      imageUrl: '',
-      expirationDate: DateTime.now(),
-      status: FoodItemStatus.expiringToday,
-    ),
-    FoodItem(
-      id: '3',
-      name: 'Chicken Breast',
-      description: '500g Package',
-      imageUrl: '',
+  // Dummy data matching the Figma design
+  final List<InventoryItem> dummyItems = [
+    InventoryItem(
+      name: 'Organic Milk',
+      category: 'Dairy • 1 liter',
+      expirationText: 'Expires in 1 day',
+      statusColor: const Color(0xFFEF4444),
+      statusBadge: 'Urgent',
+      badgeColor: const Color(0xFFFEE2E2),
+      badgeTextColor: const Color(0xFF991B1B),
+      borderColor: const Color(0xFFEF4444),
+      emoji: '🥛',
       expirationDate: DateTime.now().add(const Duration(days: 1)),
-      status: FoodItemStatus.expiringSoon,
+      categoryType: 'Dairy',
     ),
-    FoodItem(
-      id: '4',
-      name: 'Yogurt Bowl',
-      description: '500g Container',
-      imageUrl: '',
-      expirationDate: DateTime.now().add(const Duration(days: 2)),
-      status: FoodItemStatus.expiringSoon,
+    InventoryItem(
+      name: 'Fresh Bananas',
+      category: 'Fruits • 6 pieces',
+      expirationText: 'Expires today',
+      statusColor: const Color(0xFFF59E0B),
+      statusBadge: 'Today',
+      badgeColor: const Color(0xFFFEF3C7),
+      badgeTextColor: const Color(0xFF92400E),
+      borderColor: const Color(0xFFF59E0B),
+      emoji: '🍌',
+      expirationDate: DateTime.now(),
+      categoryType: 'Fruits',
     ),
-    FoodItem(
-      id: '5',
-      name: 'Avocado Toast',
-      description: '2 pieces',
-      imageUrl: '',
+    InventoryItem(
+      name: 'Whole Grain Bread',
+      category: 'Bakery • 1 loaf',
+      expirationText: 'Expires in 5 days',
+      statusColor: const Color(0xFF10B981),
+      statusBadge: 'Fresh',
+      badgeColor: const Color(0xFFD1FAE5),
+      badgeTextColor: const Color(0xFF065F46),
+      borderColor: const Color(0xFF10B981),
+      emoji: '🍞',
       expirationDate: DateTime.now().add(const Duration(days: 5)),
-      status: FoodItemStatus.fresh,
+      categoryType: 'Bakery',
+    ),
+    InventoryItem(
+      name: 'Greek Yogurt',
+      category: 'Dairy • 500g',
+      expirationText: 'Expires in 2 days',
+      statusColor: const Color(0xFFF59E0B),
+      statusBadge: 'Soon',
+      badgeColor: const Color(0xFFFEF3C7),
+      badgeTextColor: const Color(0xFF92400E),
+      borderColor: const Color(0xFFF59E0B),
+      emoji: '🥛',
+      expirationDate: DateTime.now().add(const Duration(days: 2)),
+      categoryType: 'Dairy',
+    ),
+    InventoryItem(
+      name: 'Fresh Spinach',
+      category: 'Vegetables • 250g',
+      expirationText: 'Expires today',
+      statusColor: const Color(0xFFEF4444),
+      statusBadge: 'Today',
+      badgeColor: const Color(0xFFFEE2E2),
+      badgeTextColor: const Color(0xFF991B1B),
+      borderColor: const Color(0xFFEF4444),
+      emoji: '🥬',
+      expirationDate: DateTime.now(),
+      categoryType: 'Vegetables',
+    ),
+    InventoryItem(
+      name: 'Chicken Breast',
+      category: 'Meat • 500g',
+      expirationText: 'Expires in 3 days',
+      statusColor: const Color(0xFF10B981),
+      statusBadge: 'Fresh',
+      badgeColor: const Color(0xFFD1FAE5),
+      badgeTextColor: const Color(0xFF065F46),
+      borderColor: const Color(0xFF10B981),
+      emoji: '🍗',
+      expirationDate: DateTime.now().add(const Duration(days: 3)),
+      categoryType: 'Meat',
+    ),
+    InventoryItem(
+      name: 'Cheddar Cheese',
+      category: 'Dairy • 200g',
+      expirationText: 'Expires in 1 day',
+      statusColor: const Color(0xFFEF4444),
+      statusBadge: 'Urgent',
+      badgeColor: const Color(0xFFFEE2E2),
+      badgeTextColor: const Color(0xFF991B1B),
+      borderColor: const Color(0xFFEF4444),
+      emoji: '🧀',
+      expirationDate: DateTime.now().add(const Duration(days: 1)),
+      categoryType: 'Dairy',
+    ),
+    InventoryItem(
+      name: 'Fresh Apples',
+      category: 'Fruits • 4 pieces',
+      expirationText: 'Expires in 6 days',
+      statusColor: const Color(0xFF10B981),
+      statusBadge: 'Fresh',
+      badgeColor: const Color(0xFFD1FAE5),
+      badgeTextColor: const Color(0xFF065F46),
+      borderColor: const Color(0xFF10B981),
+      emoji: '🍎',
+      expirationDate: DateTime.now().add(const Duration(days: 6)),
+      categoryType: 'Fruits',
+    ),
+    InventoryItem(
+      name: 'Pasta',
+      category: 'Pantry • 500g',
+      expirationText: 'Expires in 30 days',
+      statusColor: const Color(0xFF10B981),
+      statusBadge: 'Fresh',
+      badgeColor: const Color(0xFFD1FAE5),
+      badgeTextColor: const Color(0xFF065F46),
+      borderColor: const Color(0xFF10B981),
+      emoji: '🍝',
+      expirationDate: DateTime.now().add(const Duration(days: 30)),
+      categoryType: 'Pantry',
+    ),
+    InventoryItem(
+      name: 'Expired Milk',
+      category: 'Dairy • 1 liter',
+      expirationText: 'Expired 2 days ago',
+      statusColor: const Color(0xFF7F1D1D),
+      statusBadge: 'Expired',
+      badgeColor: const Color(0xFFFEE2E2),
+      badgeTextColor: const Color(0xFF7F1D1D),
+      borderColor: const Color(0xFF7F1D1D),
+      emoji: '🥛',
+      expirationDate: DateTime.now().subtract(const Duration(days: 2)),
+      categoryType: 'Dairy',
     ),
   ];
 
-  List<FoodItem> get filteredInventory {
-    List<FoodItem> filtered = List.from(dummyInventory);
+  List<String> get allCategories =>
+      dummyItems.map((e) => e.categoryType).toSet().toList()..sort();
+
+  List<InventoryItem> get filteredItems {
+    List<InventoryItem> filtered = List.from(dummyItems);
 
     // Apply search filter
     if (searchQuery.isNotEmpty) {
       filtered =
-          filtered
-              .where(
-                (item) =>
-                    item.name.toLowerCase().contains(
-                      searchQuery.toLowerCase(),
-                    ) ||
-                    item.description.toLowerCase().contains(
-                      searchQuery.toLowerCase(),
-                    ),
-              )
-              .toList();
+          filtered.where((item) {
+            return item.name.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                ) ||
+                item.category.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                ) ||
+                item.categoryType.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                );
+          }).toList();
     }
 
-    // Apply category filter
+    // Apply category filter from the icon
+    if (selectedCategories.isNotEmpty) {
+      filtered =
+          filtered.where((item) {
+            return selectedCategories.contains(item.categoryType);
+          }).toList();
+    }
+
+    final today = _dateOnly(DateTime.now());
+
+    // Apply expiration status filter from tabs
     switch (selectedFilter) {
       case 'Expiring Soon':
         filtered =
-            filtered
-                .where(
-                  (item) =>
-                      item.daysUntilExpiration <= 2 &&
-                      item.daysUntilExpiration >= 0,
-                )
-                .toList();
+            filtered.where((item) {
+              final expirationDay = _dateOnly(item.expirationDate);
+              final daysUntilExpiration =
+                  expirationDay.difference(today).inDays;
+              return daysUntilExpiration > 0 && daysUntilExpiration <= 3;
+            }).toList();
         break;
-      case 'Dairy':
+      case 'Expires Today':
         filtered =
-            filtered
-                .where(
-                  (item) =>
-                      item.name.toLowerCase().contains('milk') ||
-                      item.name.toLowerCase().contains('yogurt') ||
-                      item.name.toLowerCase().contains('cheese'),
-                )
-                .toList();
+            filtered.where((item) {
+              final expirationDay = _dateOnly(item.expirationDate);
+              return expirationDay.isAtSameMomentAs(today);
+            }).toList();
         break;
-      case 'Produce':
+      case 'Expired':
         filtered =
-            filtered
-                .where(
-                  (item) =>
-                      item.name.toLowerCase().contains('spinach') ||
-                      item.name.toLowerCase().contains('avocado') ||
-                      item.name.toLowerCase().contains('banana') ||
-                      item.name.toLowerCase().contains('apple'),
-                )
-                .toList();
-        break;
-      case 'Meat':
-        filtered =
-            filtered
-                .where(
-                  (item) =>
-                      item.name.toLowerCase().contains('chicken') ||
-                      item.name.toLowerCase().contains('beef') ||
-                      item.name.toLowerCase().contains('pork'),
-                )
-                .toList();
+            filtered.where((item) {
+              final expirationDay = _dateOnly(item.expirationDate);
+              return expirationDay.isBefore(today);
+            }).toList();
         break;
       case 'All Items':
       default:
@@ -140,572 +218,871 @@ class _InventoryScreenState extends State<InventoryScreen> {
         break;
     }
 
+    // Apply sorting
+    switch (sortBy) {
+      case 'expiration':
+        filtered.sort((a, b) => a.expirationDate.compareTo(b.expirationDate));
+        break;
+      case 'name':
+        filtered.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case 'category':
+        filtered.sort((a, b) => a.categoryType.compareTo(b.categoryType));
+        break;
+    }
+
     return filtered;
+  }
+
+  Map<String, int> get statisticsData {
+    final today = _dateOnly(DateTime.now());
+    int expiring = 0;
+    int todayCount = 0;
+    int total = dummyItems.length;
+
+    for (final item in dummyItems) {
+      final expirationDay = _dateOnly(item.expirationDate);
+      final daysUntilExpiration = expirationDay.difference(today).inDays;
+
+      if (expirationDay.isAtSameMomentAs(today)) {
+        todayCount++;
+      } else if (daysUntilExpiration > 0 && daysUntilExpiration <= 3) {
+        expiring++;
+      }
+    }
+
+    return {'expiring': expiring, 'today': todayCount, 'total': total};
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _showCategoryFilterBottomSheet() {
+    final tempSelectedCategories = Set<String>.from(selectedCategories);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Filter by Category',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children:
+                          allCategories.map((category) {
+                            return CheckboxListTile(
+                              title: Text(category),
+                              value: tempSelectedCategories.contains(category),
+                              onChanged: (bool? value) {
+                                setModalState(() {
+                                  if (value == true) {
+                                    tempSelectedCategories.add(category);
+                                  } else {
+                                    tempSelectedCategories.remove(category);
+                                  }
+                                });
+                              },
+                              activeColor: const Color(0xFF10B981),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setModalState(() {
+                              tempSelectedCategories.clear();
+                            });
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF374151),
+                            side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
+                          child: const Text('Reset'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedCategories = tempSelectedCategories;
+                            });
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Apply'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Sort by',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildSortOption(
+                'Expiration Date',
+                'expiration',
+                Icons.access_time_rounded,
+              ),
+              _buildSortOption('Name', 'name', Icons.sort_by_alpha_rounded),
+              _buildSortOption('Category', 'category', Icons.category_rounded),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSortOption(String title, String value, IconData icon) {
+    final isSelected = sortBy == value;
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? const Color(0xFF10B981) : const Color(0xFF6B7280),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w500,
+          fontSize: 16,
+          color: isSelected ? const Color(0xFF10B981) : const Color(0xFF111827),
+        ),
+      ),
+      trailing:
+          isSelected
+              ? const Icon(Icons.check_rounded, color: Color(0xFF10B981))
+              : null,
+      onTap: () {
+        setState(() {
+          sortBy = value;
+        });
+        Navigator.pop(context);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = filteredInventory;
-    final expiringToday =
-        filtered.where((item) => item.daysUntilExpiration <= 0).toList();
-    final expiringThisWeek =
-        filtered
-            .where(
-              (item) =>
-                  item.daysUntilExpiration > 0 && item.daysUntilExpiration <= 7,
-            )
-            .toList();
+    final stats = statisticsData;
+    final filtered = filteredItems;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: const Color(0xFFF9F9F9),
       appBar: const CustomAppBar(title: 'Eatsoon'),
       body: Column(
         children: [
-          // Header Section
+          // Sticky Header
           Container(
-            color: Colors.white.withOpacity(0.8),
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               children: [
-                const SizedBox(height: 16),
-
-                // Title and Action Buttons Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'My Inventory',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: FigmaColors.textPrimary,
-                        fontFamily: 'Inter',
+                // Header with title and action buttons
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 20.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Inventory',
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: Color(0xFF111827),
+                          height: 1.3,
+                        ),
                       ),
-                    ),
-                    Row(
-                      children: [
-                        // Search Button
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              isSearchVisible = !isSearchVisible;
-                              if (isSearchVisible) {
-                                _searchController.clear();
-                                searchQuery = '';
-                              }
-                            });
-                          },
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color:
-                                  isSearchVisible
-                                      ? FigmaColors.freshGreen.withOpacity(0.1)
-                                      : FigmaColors.backgroundLight,
-                              shape: BoxShape.circle,
-                              border:
-                                  isSearchVisible
-                                      ? Border.all(
-                                        color: FigmaColors.freshGreen,
-                                        width: 1,
-                                      )
-                                      : null,
-                            ),
-                            child: Center(
-                              child: SvgPicture.asset(
-                                'assets/icons/search_icon.svg',
-                                width: 20,
-                                height: 20,
+                      Row(
+                        children: [
+                          // Sort button
+                          GestureDetector(
+                            onTap: _showSortBottomSheet,
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 2.4,
+                                    offset: const Offset(0, 1.2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.sort,
+                                color: Color(0xFF4B5563),
+                                size: 20,
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Search Bar (conditionally visible)
-                if (isSearchVisible) ...[
-                  Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: FigmaColors.backgroundLight,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: FigmaColors.freshGreen.withOpacity(0.3),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        setState(() {
-                          searchQuery = value;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search inventory...',
-                        hintStyle: TextStyle(
-                          color: FigmaColors.textTertiary,
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: FigmaColors.freshGreen,
-                          size: 20,
-                        ),
-                        suffixIcon:
-                            searchQuery.isNotEmpty
-                                ? GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _searchController.clear();
-                                      searchQuery = '';
-                                    });
-                                  },
-                                  child: Icon(
-                                    Icons.clear,
-                                    color: FigmaColors.textTertiary,
-                                    size: 20,
+                          const SizedBox(width: 12),
+                          // Filter button
+                          GestureDetector(
+                            onTap: _showCategoryFilterBottomSheet,
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color:
+                                    selectedCategories.isNotEmpty
+                                        ? const Color(0xFFD1FAE5)
+                                        : const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 2.4,
+                                    offset: const Offset(0, 1.2),
                                   ),
-                                )
-                                : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.filter_alt_outlined,
+                                color:
+                                    selectedCategories.isNotEmpty
+                                        ? const Color(0xFF065F46)
+                                        : const Color(0xFF4B5563),
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      style: TextStyle(
-                        color: FigmaColors.textPrimary,
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Filter Chips
-                SizedBox(
-                  height: 40,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _buildFilterChip(
-                        'All Items',
-                        selectedFilter == 'All Items',
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Expiring Soon',
-                        selectedFilter == 'Expiring Soon',
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Dairy', selectedFilter == 'Dairy'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Produce', selectedFilter == 'Produce'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Meat', selectedFilter == 'Meat'),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
               ],
             ),
           ),
 
-          // Content
           Expanded(
-            child:
-                dummyInventory.isEmpty
-                    ? _buildEmptyState()
-                    : filtered.isEmpty
-                    ? _buildNoResultsState()
-                    : SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 16),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  // Statistics Cards
+                  _buildStatisticsCards(stats),
+                  const SizedBox(height: 24),
 
-                          // Expiring Today Section
-                          if (expiringToday.isNotEmpty) ...[
-                            _buildSectionHeader(
-                              'Expiring Today',
-                              expiringToday.length,
-                            ),
-                            const SizedBox(height: 16),
-                            ..._buildInventoryItems(
-                              expiringToday,
-                              startIndex: 1,
-                            ),
-                            const SizedBox(height: 32),
-                          ],
+                  // Filter Tabs
+                  _buildFilterTabs(),
+                  const SizedBox(height: 24),
 
-                          // Expiring This Week Section
-                          if (expiringThisWeek.isNotEmpty) ...[
-                            _buildSectionHeader(
-                              'Expiring This Week',
-                              expiringThisWeek.length,
-                            ),
-                            const SizedBox(height: 16),
-                            ..._buildInventoryItems(
-                              expiringThisWeek,
-                              startIndex: expiringToday.length + 1,
-                            ),
-                            const SizedBox(height: 32),
-                          ],
+                  // Search Bar
+                  _buildSearchBar(),
+                  const SizedBox(height: 24),
 
-                          // Show message if no items in current sections but filter has results
-                          if (expiringToday.isEmpty &&
-                              expiringThisWeek.isEmpty &&
-                              filtered.isNotEmpty) ...[
-                            _buildNoItemsInSectionState(),
-                          ],
-                        ],
-                      ),
-                    ),
+                  // Results info
+                  if (searchQuery.isNotEmpty ||
+                      selectedFilter != 'All Items' ||
+                      selectedCategories.isNotEmpty)
+                    _buildResultsInfo(filtered.length),
+
+                  // Inventory Items
+                  _buildInventoryList(filtered),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedFilter = label;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? FigmaColors.freshGreen : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? FigmaColors.freshGreen : FigmaColors.freshGreen,
-            width: 1,
+  Widget _buildResultsInfo(int count) {
+    String filterText = '';
+    List<String> activeFilters = [];
+
+    if (searchQuery.isNotEmpty) {
+      activeFilters.add('for "$searchQuery"');
+    }
+    if (selectedCategories.isNotEmpty) {
+      activeFilters.add('in ${selectedCategories.length} categories');
+    }
+    if (selectedFilter != 'All Items') {
+      activeFilters.add('in $selectedFilter');
+    }
+
+    if (activeFilters.isNotEmpty) {
+      filterText = activeFilters.join(' ');
+    }
+
+    final hasActiveFilters =
+        searchQuery.isNotEmpty ||
+        selectedFilter != 'All Items' ||
+        selectedCategories.isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$count ${count == 1 ? 'item' : 'items'} found $filterText',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+              ),
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : FigmaColors.textSecondary,
-            fontFamily: 'Inter',
-          ),
-        ),
+          if (hasActiveFilters) ...[
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  searchQuery = '';
+                  selectedFilter = 'All Items';
+                  selectedCategories.clear();
+                  _searchController.clear();
+                });
+              },
+              child: const Text(
+                'Clear all',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, int itemCount) {
+  Widget _buildStatisticsCards(Map<String, int> stats) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: FigmaColors.textPrimary,
-            fontFamily: 'Inter',
+        Expanded(
+          child: _buildStatCard(
+            icon: Icons.warning_rounded,
+            iconColor: const Color(0xFFEF4444),
+            iconBgColor: const Color(0xFFFEE2E2),
+            value: '${stats['expiring']}',
+            valueColor: const Color(0xFFEF4444),
+            label: 'Expiring',
           ),
         ),
-        Text(
-          '$itemCount items',
-          style: TextStyle(
-            fontSize: 14,
-            color: FigmaColors.freshGreen,
-            fontFamily: 'Inter',
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard(
+            icon: Icons.access_time_rounded,
+            iconColor: const Color(0xFFF59E0B),
+            iconBgColor: const Color(0xFFFEF3C7),
+            value: '${stats['today']}',
+            valueColor: const Color(0xFFF59E0B),
+            label: 'Today',
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard(
+            icon: Icons.inventory_2_rounded,
+            iconColor: const Color(0xFF10B981),
+            iconBgColor: const Color(0xFFD1FAE5),
+            value: '${stats['total']}',
+            valueColor: const Color(0xFF10B981),
+            label: 'Total',
           ),
         ),
       ],
     );
   }
 
-  List<Widget> _buildInventoryItems(
-    List<FoodItem> items, {
-    required int startIndex,
+  Widget _buildStatCard({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBgColor,
+    required String value,
+    required Color valueColor,
+    required String label,
   }) {
-    return items.asMap().entries.map((entry) {
-      final index = entry.key;
-      final item = entry.value;
-      final itemNumber = startIndex + index;
-
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: _buildInventoryItem(item, itemNumber),
-      );
-    }).toList();
-  }
-
-  Widget _buildInventoryItem(FoodItem item, int number) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      height: 115,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14.4),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Number Badge
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: FigmaColors.freshGreen,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                number.toString(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
                   fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  color: Color(0xFF6B7280),
+                  height: 1.2,
                 ),
               ),
-            ),
+              Container(
+                width: 24,
+                height: 24,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon, color: iconColor, size: 16),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-
-          // Item Details
           Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  value,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: FigmaColors.textPrimary,
                     fontFamily: 'Inter',
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: FigmaColors.textTertiary,
-                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 26,
+                    color: valueColor,
+                    height: 1.1,
                   ),
                 ),
               ],
             ),
           ),
-
-          // Expiration Text
-          Text(
-            item.expirationText,
-            style: TextStyle(
-              fontSize: 14,
-              color: item.statusColor,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Inter',
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              color: valueColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: FractionallySizedBox(
+              widthFactor:
+                  label.contains('Expiring')
+                      ? 0.3
+                      : label.contains('Today')
+                      ? 0.2
+                      : 0.8,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: valueColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
           ),
-
-          const SizedBox(width: 16),
-
-          // Menu Button
-          Icon(Icons.more_vert, color: Colors.grey[400], size: 20),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: FigmaColors.backgroundLight,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.inventory_2_outlined,
-                size: 60,
-                color: Colors.grey[400],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Your inventory is empty',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: FigmaColors.textPrimary,
-                fontFamily: 'Inter',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Start scanning products to track their\nexpiration dates and reduce food waste',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: FigmaColors.textTertiary,
-                fontFamily: 'Inter',
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                // TODO: Navigate to scanner
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Scanner coming soon!')),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FigmaColors.freshGreen,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: const Text(
-                'Scan Your First Item',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildFilterTabs() {
+    final filters = ['All Items', 'Expiring Soon', 'Expires Today', 'Expired'];
 
-  Widget _buildNoResultsState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: FigmaColors.backgroundLight,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.search_off, size: 60, color: Colors.grey[400]),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              searchQuery.isNotEmpty
-                  ? 'No items found for "$searchQuery"'
-                  : 'No items in ${selectedFilter.toLowerCase()}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: FigmaColors.textPrimary,
-                fontFamily: 'Inter',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              searchQuery.isNotEmpty
-                  ? 'Try searching with different keywords'
-                  : 'Try selecting a different category or add more items',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: FigmaColors.textTertiary,
-                fontFamily: 'Inter',
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (searchQuery.isNotEmpty || selectedFilter != 'All Items')
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _searchController.clear();
-                    searchQuery = '';
-                    selectedFilter = 'All Items';
-                    isSearchVisible = false;
-                  });
-                },
+    return SizedBox(
+      height: 44,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          final isSelected = selectedFilter == filter;
+
+          return Container(
+            margin: EdgeInsets.only(right: index < filters.length - 1 ? 12 : 0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedFilter = filter;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF10B981) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color:
+                        isSelected
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFE5E7EB),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 2.4,
+                      offset: const Offset(0, 1.2),
+                    ),
+                  ],
+                ),
                 child: Text(
-                  searchQuery.isNotEmpty ? 'Clear search' : 'Show all items',
+                  filter,
                   style: TextStyle(
-                    color: FigmaColors.freshGreen,
-                    fontWeight: FontWeight.w600,
                     fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: isSelected ? Colors.white : const Color(0xFF374151),
+                    height: 1.2,
                   ),
                 ),
               ),
-          ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.4),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search products...',
+          hintStyle: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
+            fontSize: 16,
+            color: Color(0xFF9CA3AF),
+            height: 1.2,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: Color(0xFF9CA3AF),
+            size: 20,
+          ),
+          suffixIcon:
+              searchQuery.isNotEmpty
+                  ? IconButton(
+                    icon: const Icon(
+                      Icons.clear_rounded,
+                      color: Color(0xFF9CA3AF),
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                    },
+                  )
+                  : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNoItemsInSectionState() {
-    return Center(
-      child: Padding(
+  Widget _buildInventoryList(List<InventoryItem> items) {
+    if (items.isEmpty) {
+      String title = 'No items in inventory';
+      String subtitle = 'Start by scanning your first product';
+
+      if (searchQuery.isNotEmpty ||
+          selectedFilter != 'All Items' ||
+          selectedCategories.isNotEmpty) {
+        title = 'No items found';
+        subtitle = 'Try adjusting your search or filters';
+      }
+
+      return Container(
         padding: const EdgeInsets.all(40),
         child: Column(
           children: [
-            Icon(Icons.info_outline, size: 48, color: Colors.grey[400]),
+            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Items found but not expiring soon',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: FigmaColors.textPrimary,
+              title,
+              style: const TextStyle(
                 fontFamily: 'Inter',
+                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                color: Color(0xFF6B7280),
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Your filtered items are fresh and not expiring in the next week',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: FigmaColors.textTertiary,
+              subtitle,
+              style: const TextStyle(
                 fontFamily: 'Inter',
-                height: 1.5,
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+                color: Color(0xFF9CA3AF),
               ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: items.map((item) => _buildInventoryItem(item)).toList(),
+    );
+  }
+
+  Widget _buildInventoryItem(InventoryItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.4),
+        border: Border(left: BorderSide(color: item.borderColor, width: 4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Product Image/Emoji
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(9.6),
+                border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              ),
+              child: Center(
+                child: Text(item.emoji, style: const TextStyle(fontSize: 24)),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Product Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Color(0xFF111827),
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.category,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.expirationText,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: item.statusColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Status Badge and Menu
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: item.badgeColor,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    item.statusBadge,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      color: item.badgeTextColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Icon(
+                  Icons.more_vert_rounded,
+                  color: Color(0xFF9CA3AF),
+                  size: 20,
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class InventoryItem {
+  final String name;
+  final String category;
+  final String expirationText;
+  final Color statusColor;
+  final String statusBadge;
+  final Color badgeColor;
+  final Color badgeTextColor;
+  final Color borderColor;
+  final String emoji;
+  final DateTime expirationDate;
+  final String categoryType;
+
+  InventoryItem({
+    required this.name,
+    required this.category,
+    required this.expirationText,
+    required this.statusColor,
+    required this.statusBadge,
+    required this.badgeColor,
+    required this.badgeTextColor,
+    required this.borderColor,
+    required this.emoji,
+    required this.expirationDate,
+    required this.categoryType,
+  });
 }
