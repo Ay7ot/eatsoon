@@ -97,9 +97,11 @@ class _LoginScreenState extends State<LoginScreen>
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
+        final errorMessage = authProvider.errorMessage ?? 'Login failed';
+        debugPrint('Login Error: $errorMessage');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Login failed'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -121,9 +123,11 @@ class _LoginScreenState extends State<LoginScreen>
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else if (authProvider.errorMessage != null) {
+      final errorMessage = authProvider.errorMessage!;
+      debugPrint('Google Sign-In Error: $errorMessage');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage!),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(

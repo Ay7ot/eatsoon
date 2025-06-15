@@ -8,6 +8,7 @@ import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/auth_wrapper.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/splash/splash_screen.dart';
+import 'package:flutter/foundation.dart';
 
 // Import your app components (these will be created later)
 // import 'core/router/app_router.dart';
@@ -22,16 +23,18 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Activate App Check with error handling
+  // Activate App Check with a more robust provider selection
   try {
     await FirebaseAppCheck.instance.activate(
-      // Use the debug provider for development purposes
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
+      androidProvider:
+          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+      appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
     );
+    debugPrint('App Check activated successfully.');
   } catch (e) {
-    // App Check activation failed, but we can continue without it in development
-    debugPrint('App Check activation failed: $e');
+    // App Check activation failed.
+    // If you're using App Check enforcement, this will cause issues.
+    debugPrint('Error activating App Check: $e');
   }
 
   runApp(const EatSoonApp());

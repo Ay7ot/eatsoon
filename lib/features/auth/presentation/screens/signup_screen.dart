@@ -124,9 +124,11 @@ class _SignupScreenState extends State<SignupScreen>
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
+        final errorMessage = authProvider.errorMessage ?? 'Signup failed';
+        debugPrint('Signup Error: $errorMessage');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Signup failed'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

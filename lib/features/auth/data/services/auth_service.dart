@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -34,13 +35,22 @@ class AuthService {
       await userCredential.user?.updateDisplayName(name);
 
       // Save user data to Firestore
-      await _saveUserToFirestore(userCredential.user!, name);
+      try {
+        await _saveUserToFirestore(userCredential.user!, name);
+      } catch (e, stackTrace) {
+        debugPrint('Error saving user to Firestore: $e');
+        debugPrint('Stack trace for Firestore save: $stackTrace');
+        // This catch block handles errors specifically from _saveUserToFirestore
+        throw 'User account was created, but failed to save user data. This might be due to App Check enforcement. Please try logging in.';
+      }
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
-    } catch (e) {
-      throw 'An unexpected error occurred. Please try again.';
+    } catch (e, stackTrace) {
+      debugPrint('An unexpected error occurred in signUp: $e');
+      debugPrint('Stack trace: $stackTrace');
+      throw e.toString();
     }
   }
 
