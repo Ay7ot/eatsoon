@@ -17,18 +17,15 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => AppShellState();
 }
 
-class AppShellState extends State<AppShell> {
+class AppShellState extends State<AppShell> with TickerProviderStateMixin {
   int _selectedIndex = 0;
-  final PageController _pageController = PageController();
 
-  // Define the pages for the navigation (5 tabs now including scan)
-  final List<Widget> _pages = [
-    const HomeScreen(),
-    const InventoryScreen(),
-    const ScanScreen(), // Scan is now a regular tab
-    const RecipesScreen(),
-    const ProfileScreen(),
-  ];
+  // Use IndexedStack instead of PageView for better performance
+  // Pages are built lazily and maintain their state
+  late final List<Widget> _pages;
+
+  // Track which pages have been visited to enable lazy loading
+  final Set<int> _visitedPages = {0}; // Home is visited by default
 
   // Navigation items data
   final List<Map<String, dynamic>> _navItems = [
@@ -39,35 +36,54 @@ class AppShellState extends State<AppShell> {
     {'icon': 'assets/icons/profile.svg', 'label': 'Profile'},
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize pages list
+    _pages = [
+      const HomeScreen(),
+      const InventoryScreen(),
+      const ScanScreen(),
+      const RecipesScreen(),
+      const ProfileScreen(),
+    ];
+  }
+
   // Method to navigate to a specific tab from external widgets
   void navigateToTab(int index) {
-    if (index >= 0 && index < _pages.length) {
-      onItemTapped(index);
+    if (index >= 0 && index < _pages.length && index != _selectedIndex) {
+      setState(() {
+        _selectedIndex = index;
+        _visitedPages.add(index); // Mark page as visited for lazy loading
+      });
     }
   }
 
   void onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    });
+    if (index != _selectedIndex) {
+      setState(() {
+        _selectedIndex = index;
+        _visitedPages.add(index); // Mark page as visited for lazy loading
+      });
+    }
+  }
+
+  Widget _buildPage(int index) {
+    // Lazy loading: only build pages that have been visited
+    if (_visitedPages.contains(index)) {
+      return _pages[index];
+    } else {
+      // Return a lightweight placeholder for unvisited pages
+      return const SizedBox.shrink();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        children: _pages,
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: List.generate(_pages.length, (index) => _buildPage(index)),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

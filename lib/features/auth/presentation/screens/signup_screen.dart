@@ -2,6 +2,7 @@ import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/custom_textfield.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:eat_soon/features/home/presentation/screens/home_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -119,10 +120,9 @@ class _SignupScreenState extends State<SignupScreen>
           ),
         );
 
-        // Navigate to home screen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        // Use the same navigation logic as the "Log in" button
+        // This will pop back to login screen where AuthWrapper will take control
+        if (mounted) Navigator.of(context).pop();
       } else {
         final errorMessage = authProvider.errorMessage ?? 'Signup failed';
         debugPrint('Signup Error: $errorMessage');

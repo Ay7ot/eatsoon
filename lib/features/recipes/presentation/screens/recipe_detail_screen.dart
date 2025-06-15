@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:eat_soon/features/recipes/presentation/screens/recipes_screen.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';

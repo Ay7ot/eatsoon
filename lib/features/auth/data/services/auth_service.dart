@@ -119,6 +119,32 @@ class AuthService {
     }
   }
 
+  // Update user profile
+  Future<void> updateUserProfile({required String name}) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw 'No user is currently signed in.';
+      }
+
+      // Update Firebase Auth display name
+      await user.updateDisplayName(name);
+
+      // Update Firestore user document
+      await _firestore.collection('users').doc(user.uid).update({
+        'name': name,
+        'lastLoginAt': FieldValue.serverTimestamp(),
+      });
+
+      // Reload user to get updated data
+      await user.reload();
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Failed to update profile. Please try again.';
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     try {

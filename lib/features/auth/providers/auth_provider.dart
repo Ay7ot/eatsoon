@@ -33,6 +33,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _onAuthStateChanged(User? user) {
+    debugPrint(
+      'Auth state changed: user = ${user?.uid}, email = ${user?.email}',
+    );
     if (user != null) {
       _user = UserModel.fromFirebaseUser(
         uid: user.uid,
@@ -41,11 +44,14 @@ class AuthProvider extends ChangeNotifier {
         photoURL: user.photoURL,
       );
       _status = AuthStatus.authenticated;
+      debugPrint('Status set to authenticated');
     } else {
       _user = null;
       _status = AuthStatus.unauthenticated;
+      debugPrint('Status set to unauthenticated');
     }
     notifyListeners();
+    debugPrint('Listeners notified, current status: $_status');
   }
 
   void _setLoading(bool loading) {
@@ -136,6 +142,29 @@ class AuthProvider extends ChangeNotifier {
       _setError(null);
 
       await _authService.sendPasswordResetEmail(email);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Update user profile
+  Future<bool> updateProfile({required String name}) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      await _authService.updateUserProfile(name: name);
+
+      // Update local user model
+      if (_user != null) {
+        _user = _user!.copyWith(name: name);
+        notifyListeners();
+      }
+
       return true;
     } catch (e) {
       _setError(e.toString());

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
+import 'package:eat_soon/core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   final String? scannedImagePath;
@@ -57,10 +60,69 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
-      appBar: const CustomAppBar(title: 'Eatsoon'),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(65.0),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0x00E5E7EB), AppTheme.secondaryColor],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              stops: [0.5, 1.0],
+            ),
+            border: Border(
+              bottom: BorderSide(color: AppTheme.borderColor, width: 0.8),
+            ),
+          ),
+          child: AppBar(
+            systemOverlayStyle: const SystemUiOverlayStyle(
+              statusBarIconBrightness: Brightness.dark,
+              statusBarBrightness: Brightness.light,
+            ),
+            automaticallyImplyLeading: false,
+            title: Text(
+              'Eatsoon',
+              style: GoogleFonts.nunito(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.secondaryColor,
+                fontSize: 26,
+              ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            actions: [
+              GestureDetector(
+                onTap: () {
+                  // Navigate to profile tab (index 4) using AppShell navigation
+                  final shellState = AppShell.shellKey.currentState;
+                  if (shellState != null) {
+                    shellState.navigateToTab(4); // Profile tab is at index 4
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10.0),
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: const BoxDecoration(
+                    color: AppTheme.whiteColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: SvgPicture.asset(
+                    'assets/icons/settings_icon.svg',
+                    height: 24,
+                    colorFilter: const ColorFilter.mode(
+                      AppTheme.secondaryColor,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Column(
         children: [
-          // Sub-header without back button
+          // Sub-header for confirmation context
           _buildSubHeader(),
 
           // Scrollable content
@@ -132,15 +194,30 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              'Confirm Product',
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF111827),
-                height: 1.3,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Confirm Product Details',
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827),
+                    height: 1.3,
+                  ),
+                ),
+                Text(
+                  'Review and edit before adding to pantry',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF6B7280),
+                    height: 1.2,
+                  ),
+                ),
+              ],
             ),
           ),
           Container(
@@ -154,7 +231,25 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 color: Color(0xFF4B5563),
                 size: 20,
               ),
-              onPressed: () {},
+              onPressed: () {
+                // Show help dialog or navigate to help screen
+                showDialog(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        title: const Text('Product Confirmation Help'),
+                        content: const Text(
+                          'Review the detected product information and make any necessary corrections before adding it to your pantry. Auto-detected fields are highlighted in green.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Got it'),
+                          ),
+                        ],
+                      ),
+                );
+              },
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             ),

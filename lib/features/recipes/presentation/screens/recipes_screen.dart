@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:eat_soon/features/recipes/presentation/screens/recipe_detail_screen.dart';
+import 'dart:async';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});
@@ -9,7 +10,8 @@ class RecipesScreen extends StatefulWidget {
   State<RecipesScreen> createState() => _RecipesScreenState();
 }
 
-class _RecipesScreenState extends State<RecipesScreen> {
+class _RecipesScreenState extends State<RecipesScreen>
+    with AutomaticKeepAliveClientMixin {
   String selectedCategory = 'Use Soon';
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
@@ -18,6 +20,15 @@ class _RecipesScreenState extends State<RecipesScreen> {
   Set<String> selectedCookTimes = {};
   int displayedRecipesCount = 6;
   bool isLoadingMore = false;
+  Timer? _debounceTimer;
+
+  // Cache filtered results to avoid recomputation
+  List<Recipe>? _cachedFilteredRecipes;
+  String? _lastFilterKey;
+
+  // Keep state alive to prevent rebuilding when switching tabs
+  @override
+  bool get wantKeepAlive => true;
 
   // Dummy recipe data with images
   final List<Recipe> allRecipes = [
@@ -42,350 +53,297 @@ class _RecipesScreenState extends State<RecipesScreen> {
     ),
     Recipe(
       id: '2',
-      title: 'Cherry Smoothie Bowl',
-      description: 'Refreshing and nutritious breakfast option',
-      imageUrl:
-          'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&h=300&fit=crop',
-      cookTime: '10 min',
-      difficulty: 'Easy',
-      servings: '2 servings',
-      category: 'Quick',
-      categoryColor: const Color(0xFF10B981),
-      primaryIngredient: '🍒 Cherries',
-      ingredientColor: const Color(0xFFFEE2E2),
-      ingredientTextColor: const Color(0xFF991B1B),
-      additionalIngredients: '+2 more',
-      isFavorite: true,
-      borderColor: null,
-      tags: ['smoothie', 'healthy', 'breakfast'],
-    ),
-    Recipe(
-      id: '3',
-      title: 'Mediterranean Salad',
-      description: 'Fresh and vibrant salad with seasonal vegetables',
-      imageUrl:
-          'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop',
-      cookTime: '15 min',
-      difficulty: 'Easy',
-      servings: '4 servings',
-      category: 'Healthy',
-      categoryColor: const Color(0xFF3B82F6),
-      primaryIngredient: '🥬 Lettuce',
-      ingredientColor: const Color(0xFFD1FAE5),
-      ingredientTextColor: const Color(0xFF065F46),
-      additionalIngredients: '+5 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['salad', 'healthy', 'mediterranean'],
-    ),
-    Recipe(
-      id: '4',
-      title: 'Garlic Green Beans',
-      description: 'Simple and flavorful side dish',
-      imageUrl:
-          'https://images.unsplash.com/photo-1628773822503-930a7eaecf80?w=400&h=300&fit=crop',
-      cookTime: '20 min',
-      difficulty: 'Easy',
-      servings: '4 servings',
-      category: 'Veggie',
-      categoryColor: const Color(0xFF10B981),
-      primaryIngredient: '🫘 Green Beans',
-      ingredientColor: const Color(0xFFD1FAE5),
-      ingredientTextColor: const Color(0xFF065F46),
-      additionalIngredients: '+2 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['vegetables', 'side dish', 'garlic'],
-    ),
-    Recipe(
-      id: '5',
-      title: 'Chocolate Chip Cookies',
-      description: 'Classic homemade cookies that everyone loves',
-      imageUrl:
-          'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400&h=300&fit=crop',
-      cookTime: '25 min',
-      difficulty: 'Medium',
-      servings: '24 cookies',
-      category: 'Dessert',
-      categoryColor: const Color(0xFF8B5CF6),
-      primaryIngredient: '🍫 Chocolate',
-      ingredientColor: const Color(0xFFF3E8FF),
-      ingredientTextColor: const Color(0xFF581C87),
-      additionalIngredients: '+4 more',
-      isFavorite: true,
-      borderColor: null,
-      tags: ['cookies', 'dessert', 'chocolate'],
-    ),
-    Recipe(
-      id: '6',
-      title: 'Avocado Toast',
-      description: 'Quick and healthy breakfast or snack',
-      imageUrl:
-          'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400&h=300&fit=crop',
-      cookTime: '5 min',
-      difficulty: 'Easy',
-      servings: '1 serving',
-      category: 'Quick',
-      categoryColor: const Color(0xFF10B981),
-      primaryIngredient: '🥑 Avocado',
-      ingredientColor: const Color(0xFFD1FAE5),
-      ingredientTextColor: const Color(0xFF065F46),
-      additionalIngredients: '+2 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['toast', 'healthy', 'avocado'],
-    ),
-    Recipe(
-      id: '7',
-      title: 'Chicken Stir Fry',
-      description: 'Quick and easy weeknight dinner with fresh vegetables',
-      imageUrl:
-          'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop',
-      cookTime: '18 min',
-      difficulty: 'Easy',
-      servings: '4 servings',
-      category: 'Quick',
-      categoryColor: const Color(0xFF10B981),
-      primaryIngredient: '🐔 Chicken',
-      ingredientColor: const Color(0xFFFEF3C7),
-      ingredientTextColor: const Color(0xFF92400E),
-      additionalIngredients: '+6 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['chicken', 'stir-fry', 'dinner'],
-    ),
-    Recipe(
-      id: '8',
-      title: 'Blueberry Pancakes',
-      description: 'Fluffy pancakes bursting with fresh blueberries',
-      imageUrl:
-          'https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop',
-      cookTime: '30 min',
-      difficulty: 'Medium',
-      servings: '4 servings',
-      category: 'Breakfast',
-      categoryColor: const Color(0xFF8B5CF6),
-      primaryIngredient: '🫐 Blueberries',
-      ingredientColor: const Color(0xFFDDD6FE),
-      ingredientTextColor: const Color(0xFF581C87),
-      additionalIngredients: '+5 more',
-      isFavorite: true,
-      borderColor: null,
-      tags: ['pancakes', 'breakfast', 'blueberry'],
-    ),
-    Recipe(
-      id: '9',
-      title: 'Tomato Basil Pasta',
-      description: 'Classic Italian pasta with fresh tomatoes and basil',
-      imageUrl:
-          'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?w=400&h=300&fit=crop',
-      cookTime: '22 min',
-      difficulty: 'Easy',
-      servings: '3 servings',
-      category: 'Use Today',
-      categoryColor: const Color(0xFFEF4444),
-      primaryIngredient: '🍅 Tomatoes',
-      ingredientColor: const Color(0xFFFEE2E2),
-      ingredientTextColor: const Color(0xFF991B1B),
-      additionalIngredients: '+4 more',
-      isFavorite: false,
-      borderColor: const Color(0xFFEF4444),
-      tags: ['pasta', 'italian', 'tomato'],
-    ),
-    Recipe(
-      id: '10',
-      title: 'Greek Yogurt Parfait',
-      description: 'Healthy layered parfait with yogurt, berries, and granola',
-      imageUrl:
-          'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
-      cookTime: '8 min',
-      difficulty: 'Easy',
-      servings: '2 servings',
-      category: 'Healthy',
-      categoryColor: const Color(0xFF3B82F6),
-      primaryIngredient: '🥛 Greek Yogurt',
-      ingredientColor: const Color(0xFFDDEAFE),
-      ingredientTextColor: const Color(0xFF1E40AF),
-      additionalIngredients: '+3 more',
-      isFavorite: true,
-      borderColor: null,
-      tags: ['yogurt', 'healthy', 'breakfast'],
-    ),
-    Recipe(
-      id: '11',
-      title: 'Beef Tacos',
-      description: 'Spicy ground beef tacos with fresh toppings',
-      imageUrl:
-          'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-      cookTime: '35 min',
-      difficulty: 'Medium',
-      servings: '6 servings',
-      category: 'Dinner',
-      categoryColor: const Color(0xFFF59E0B),
-      primaryIngredient: '🥩 Ground Beef',
-      ingredientColor: const Color(0xFFFEF3C7),
-      ingredientTextColor: const Color(0xFF92400E),
-      additionalIngredients: '+7 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['tacos', 'beef', 'mexican'],
-    ),
-    Recipe(
-      id: '12',
-      title: 'Quinoa Buddha Bowl',
-      description:
-          'Nutritious bowl with quinoa, roasted vegetables, and tahini',
+      title: 'Quick Veggie Stir Fry',
+      description: 'Use up those vegetables before they go bad!',
       imageUrl:
           'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop',
-      cookTime: '45 min',
-      difficulty: 'Medium',
-      servings: '2 servings',
-      category: 'Healthy',
-      categoryColor: const Color(0xFF3B82F6),
-      primaryIngredient: '🌾 Quinoa',
-      ingredientColor: const Color(0xFFFEF3C7),
-      ingredientTextColor: const Color(0xFF92400E),
-      additionalIngredients: '+8 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['quinoa', 'healthy', 'bowl'],
-    ),
-    Recipe(
-      id: '13',
-      title: 'Lemon Garlic Salmon',
-      description: 'Pan-seared salmon with lemon and garlic butter sauce',
-      imageUrl:
-          'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop',
-      cookTime: '20 min',
-      difficulty: 'Medium',
-      servings: '4 servings',
-      category: 'Healthy',
-      categoryColor: const Color(0xFF3B82F6),
-      primaryIngredient: '🐟 Salmon',
-      ingredientColor: const Color(0xFFFFE4E1),
-      ingredientTextColor: const Color(0xFFDC2626),
-      additionalIngredients: '+4 more',
-      isFavorite: true,
-      borderColor: null,
-      tags: ['salmon', 'healthy', 'seafood'],
-    ),
-    Recipe(
-      id: '14',
-      title: 'Vegetable Curry',
-      description: 'Aromatic curry with mixed vegetables and coconut milk',
-      imageUrl:
-          'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400&h=300&fit=crop',
-      cookTime: '40 min',
-      difficulty: 'Medium',
-      servings: '5 servings',
-      category: 'Veggie',
-      categoryColor: const Color(0xFF10B981),
-      primaryIngredient: '🥕 Mixed Vegetables',
-      ingredientColor: const Color(0xFFD1FAE5),
-      ingredientTextColor: const Color(0xFF065F46),
-      additionalIngredients: '+9 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['curry', 'vegetables', 'indian'],
-    ),
-    Recipe(
-      id: '15',
-      title: 'Apple Cinnamon Oatmeal',
-      description: 'Warm and comforting breakfast with apples and cinnamon',
-      imageUrl:
-          'https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?w=400&h=300&fit=crop',
       cookTime: '12 min',
       difficulty: 'Easy',
       servings: '2 servings',
       category: 'Quick',
       categoryColor: const Color(0xFF10B981),
-      primaryIngredient: '🍎 Apples',
-      ingredientColor: const Color(0xFFFEE2E2),
-      ingredientTextColor: const Color(0xFF991B1B),
-      additionalIngredients: '+3 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['oatmeal', 'breakfast', 'apple'],
-    ),
-    Recipe(
-      id: '16',
-      title: 'Mushroom Risotto',
-      description: 'Creamy Italian risotto with wild mushrooms',
-      imageUrl:
-          'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&h=300&fit=crop',
-      cookTime: '50 min',
-      difficulty: 'Hard',
-      servings: '4 servings',
-      category: 'Dinner',
-      categoryColor: const Color(0xFFF59E0B),
-      primaryIngredient: '🍄 Mushrooms',
-      ingredientColor: const Color(0xFFF3F4F6),
-      ingredientTextColor: const Color(0xFF374151),
-      additionalIngredients: '+6 more',
+      primaryIngredient: '🥕 Mixed Vegetables',
+      ingredientColor: const Color(0xFFD1FAE5),
+      ingredientTextColor: const Color(0xFF065F46),
+      additionalIngredients: '+4 more',
       isFavorite: true,
-      borderColor: null,
-      tags: ['risotto', 'mushroom', 'italian'],
+      borderColor: const Color(0xFF10B981),
+      tags: ['healthy', 'quick', 'vegetarian'],
     ),
     Recipe(
-      id: '17',
-      title: 'Strawberry Smoothie',
-      description: 'Refreshing smoothie with fresh strawberries and yogurt',
+      id: '3',
+      title: 'Leftover Chicken Salad',
+      description: 'Transform leftover chicken into a fresh meal',
       imageUrl:
-          'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop',
-      cookTime: '5 min',
+          'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=300&fit=crop',
+      cookTime: '8 min',
       difficulty: 'Easy',
       servings: '1 serving',
       category: 'Quick',
       categoryColor: const Color(0xFF10B981),
-      primaryIngredient: '🍓 Strawberries',
-      ingredientColor: const Color(0xFFFEE2E2),
-      ingredientTextColor: const Color(0xFF991B1B),
-      additionalIngredients: '+2 more',
-      isFavorite: false,
-      borderColor: null,
-      tags: ['smoothie', 'strawberry', 'healthy'],
-    ),
-    Recipe(
-      id: '18',
-      title: 'BBQ Pulled Pork',
-      description: 'Slow-cooked pulled pork with tangy BBQ sauce',
-      imageUrl:
-          'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
-      cookTime: '4 hours',
-      difficulty: 'Hard',
-      servings: '8 servings',
-      category: 'Dinner',
-      categoryColor: const Color(0xFFF59E0B),
-      primaryIngredient: '🐷 Pork Shoulder',
+      primaryIngredient: '🍗 Chicken',
       ingredientColor: const Color(0xFFFEF3C7),
       ingredientTextColor: const Color(0xFF92400E),
       additionalIngredients: '+5 more',
       isFavorite: false,
-      borderColor: null,
-      tags: ['pork', 'bbq', 'slow-cooked'],
+      borderColor: const Color(0xFF10B981),
+      tags: ['protein', 'salad', 'quick'],
+    ),
+    Recipe(
+      id: '4',
+      title: 'Smoothie Bowl',
+      description: 'Perfect for fruits about to go bad',
+      imageUrl:
+          'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&h=300&fit=crop',
+      cookTime: '5 min',
+      difficulty: 'Easy',
+      servings: '1 serving',
+      category: 'Healthy',
+      categoryColor: const Color(0xFF8B5CF6),
+      primaryIngredient: '🍓 Mixed Berries',
+      ingredientColor: const Color(0xFFEDE9FE),
+      ingredientTextColor: const Color(0xFF5B21B6),
+      additionalIngredients: '+3 more',
+      isFavorite: true,
+      borderColor: const Color(0xFF8B5CF6),
+      tags: ['healthy', 'breakfast', 'fruit'],
+    ),
+    Recipe(
+      id: '5',
+      title: 'Pasta Primavera',
+      description: 'Use seasonal vegetables in this colorful dish',
+      imageUrl:
+          'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&h=300&fit=crop',
+      cookTime: '25 min',
+      difficulty: 'Medium',
+      servings: '4 servings',
+      category: 'Healthy',
+      categoryColor: const Color(0xFF8B5CF6),
+      primaryIngredient: '🍝 Pasta',
+      ingredientColor: const Color(0xFFFEF3C7),
+      ingredientTextColor: const Color(0xFF92400E),
+      additionalIngredients: '+6 more',
+      isFavorite: false,
+      borderColor: const Color(0xFF8B5CF6),
+      tags: ['pasta', 'vegetables', 'italian'],
+    ),
+    Recipe(
+      id: '6',
+      title: 'Overnight Oats',
+      description: 'Prep ahead breakfast with expiring fruits',
+      imageUrl:
+          'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=400&h=300&fit=crop',
+      cookTime: '5 min',
+      difficulty: 'Easy',
+      servings: '1 serving',
+      category: 'Healthy',
+      categoryColor: const Color(0xFF8B5CF6),
+      primaryIngredient: '🥣 Oats',
+      ingredientColor: const Color(0xFFFEF3C7),
+      ingredientTextColor: const Color(0xFF92400E),
+      additionalIngredients: '+4 more',
+      isFavorite: true,
+      borderColor: const Color(0xFF8B5CF6),
+      tags: ['breakfast', 'healthy', 'make-ahead'],
+    ),
+    Recipe(
+      id: '7',
+      title: 'Tomato Soup',
+      description: 'Perfect for overripe tomatoes',
+      imageUrl:
+          'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop',
+      cookTime: '35 min',
+      difficulty: 'Easy',
+      servings: '4 servings',
+      category: 'Use Today',
+      categoryColor: const Color(0xFFEF4444),
+      primaryIngredient: '🍅 Tomatoes',
+      ingredientColor: const Color(0xFFFEE2E2),
+      ingredientTextColor: const Color(0xFF991B1B),
+      additionalIngredients: '+3 more',
+      isFavorite: false,
+      borderColor: const Color(0xFFEF4444),
+      tags: ['soup', 'comfort', 'tomato'],
+    ),
+    Recipe(
+      id: '8',
+      title: 'Fruit Crumble',
+      description: 'Rescue overripe fruits with this warm dessert',
+      imageUrl:
+          'https://images.unsplash.com/photo-1464305795204-6f5bbfc7fb81?w=400&h=300&fit=crop',
+      cookTime: '45 min',
+      difficulty: 'Medium',
+      servings: '6 servings',
+      category: 'Use Today',
+      categoryColor: const Color(0xFFEF4444),
+      primaryIngredient: '🍎 Mixed Fruits',
+      ingredientColor: const Color(0xFFFEF3C7),
+      ingredientTextColor: const Color(0xFF92400E),
+      additionalIngredients: '+4 more',
+      isFavorite: true,
+      borderColor: const Color(0xFFEF4444),
+      tags: ['dessert', 'fruit', 'baking'],
+    ),
+    Recipe(
+      id: '9',
+      title: 'Fried Rice',
+      description: 'Transform leftover rice and vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop',
+      cookTime: '15 min',
+      difficulty: 'Easy',
+      servings: '3 servings',
+      category: 'Quick',
+      categoryColor: const Color(0xFF10B981),
+      primaryIngredient: '🍚 Rice',
+      ingredientColor: const Color(0xFFFEF3C7),
+      ingredientTextColor: const Color(0xFF92400E),
+      additionalIngredients: '+5 more',
+      isFavorite: false,
+      borderColor: const Color(0xFF10B981),
+      tags: ['rice', 'asian', 'leftovers'],
+    ),
+    Recipe(
+      id: '10',
+      title: 'Green Smoothie',
+      description: 'Use up leafy greens before they wilt',
+      imageUrl:
+          'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=400&h=300&fit=crop',
+      cookTime: '5 min',
+      difficulty: 'Easy',
+      servings: '1 serving',
+      category: 'Healthy',
+      categoryColor: const Color(0xFF8B5CF6),
+      primaryIngredient: '🥬 Spinach',
+      ingredientColor: const Color(0xFFD1FAE5),
+      ingredientTextColor: const Color(0xFF065F46),
+      additionalIngredients: '+3 more',
+      isFavorite: true,
+      borderColor: const Color(0xFF8B5CF6),
+      tags: ['healthy', 'smoothie', 'greens'],
+    ),
+    Recipe(
+      id: '11',
+      title: 'Bread Pudding',
+      description: 'Give stale bread a second life',
+      imageUrl:
+          'https://images.unsplash.com/photo-1571197119282-7c4a2b8b8c8c?w=400&h=300&fit=crop',
+      cookTime: '50 min',
+      difficulty: 'Medium',
+      servings: '8 servings',
+      category: 'Use Today',
+      categoryColor: const Color(0xFFEF4444),
+      primaryIngredient: '🍞 Stale Bread',
+      ingredientColor: const Color(0xFFFEF3C7),
+      ingredientTextColor: const Color(0xFF92400E),
+      additionalIngredients: '+5 more',
+      isFavorite: false,
+      borderColor: const Color(0xFFEF4444),
+      tags: ['dessert', 'bread', 'comfort'],
+    ),
+    Recipe(
+      id: '12',
+      title: 'Vegetable Curry',
+      description: 'Spicy curry to use mixed vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=300&fit=crop',
+      cookTime: '30 min',
+      difficulty: 'Medium',
+      servings: '4 servings',
+      category: 'Healthy',
+      categoryColor: const Color(0xFF8B5CF6),
+      primaryIngredient: '🌶️ Mixed Vegetables',
+      ingredientColor: const Color(0xFFD1FAE5),
+      ingredientTextColor: const Color(0xFF065F46),
+      additionalIngredients: '+7 more',
+      isFavorite: true,
+      borderColor: const Color(0xFF8B5CF6),
+      tags: ['curry', 'spicy', 'vegetables'],
+    ),
+    Recipe(
+      id: '13',
+      title: 'Pancakes',
+      description: 'Quick breakfast with basic ingredients',
+      imageUrl:
+          'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop',
+      cookTime: '20 min',
+      difficulty: 'Easy',
+      servings: '4 servings',
+      category: 'Quick',
+      categoryColor: const Color(0xFF10B981),
+      primaryIngredient: '🥞 Flour',
+      ingredientColor: const Color(0xFFFEF3C7),
+      ingredientTextColor: const Color(0xFF92400E),
+      additionalIngredients: '+4 more',
+      isFavorite: false,
+      borderColor: const Color(0xFF10B981),
+      tags: ['breakfast', 'pancakes', 'quick'],
+    ),
+    Recipe(
+      id: '14',
+      title: 'Roasted Vegetables',
+      description: 'Simple roasted vegetables with herbs',
+      imageUrl:
+          'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop',
+      cookTime: '40 min',
+      difficulty: 'Easy',
+      servings: '4 servings',
+      category: 'Healthy',
+      categoryColor: const Color(0xFF8B5CF6),
+      primaryIngredient: '🥕 Root Vegetables',
+      ingredientColor: const Color(0xFFD1FAE5),
+      ingredientTextColor: const Color(0xFF065F46),
+      additionalIngredients: '+3 more',
+      isFavorite: true,
+      borderColor: const Color(0xFF8B5CF6),
+      tags: ['vegetables', 'roasted', 'healthy'],
+    ),
+    Recipe(
+      id: '15',
+      title: 'Meatball Soup',
+      description: 'Hearty soup with leftover meat',
+      imageUrl:
+          'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop',
+      cookTime: '4 hours',
+      difficulty: 'Hard',
+      servings: '6 servings',
+      category: 'Use Today',
+      categoryColor: const Color(0xFFEF4444),
+      primaryIngredient: '🍖 Ground Meat',
+      ingredientColor: const Color(0xFFFEE2E2),
+      ingredientTextColor: const Color(0xFF991B1B),
+      additionalIngredients: '+6 more',
+      isFavorite: false,
+      borderColor: const Color(0xFFEF4444),
+      tags: ['soup', 'meat', 'comfort'],
     ),
   ];
 
+  // Generate a cache key for current filter state
+  String get _filterKey {
+    return '$selectedCategory|$searchQuery|$showFavoritesOnly|${selectedDifficulties.join(',')}|${selectedCookTimes.join(',')}';
+  }
+
+  // Optimized filtered recipes with caching
   List<Recipe> get filteredRecipes {
+    final currentKey = _filterKey;
+
+    // Return cached result if filter hasn't changed
+    if (_cachedFilteredRecipes != null && _lastFilterKey == currentKey) {
+      return _cachedFilteredRecipes!;
+    }
+
+    // Compute filtered recipes
     List<Recipe> filtered = List.from(allRecipes);
 
-    // Apply search filter
+    // Apply search filter first (most selective)
     if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
       filtered =
           filtered.where((recipe) {
-            return recipe.title.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ||
-                recipe.description.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ||
-                recipe.tags.any(
-                  (tag) =>
-                      tag.toLowerCase().contains(searchQuery.toLowerCase()),
-                ) ||
-                recipe.primaryIngredient.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                );
+            return recipe.title.toLowerCase().contains(query) ||
+                recipe.description.toLowerCase().contains(query) ||
+                recipe.tags.any((tag) => tag.toLowerCase().contains(query));
           }).toList();
     }
 
@@ -412,10 +370,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 .where(
                   (recipe) =>
                       recipe.category == 'Quick' ||
-                      recipe.cookTime.contains('5 min') ||
-                      recipe.cookTime.contains('8 min') ||
-                      recipe.cookTime.contains('10 min') ||
-                      recipe.cookTime.contains('12 min'),
+                      _isQuickCookTime(recipe.cookTime),
                 )
                 .toList();
         break;
@@ -447,41 +402,54 @@ class _RecipesScreenState extends State<RecipesScreen> {
     // Apply cook time filter
     if (selectedCookTimes.isNotEmpty) {
       filtered =
-          filtered.where((recipe) {
-            for (String timeRange in selectedCookTimes) {
-              switch (timeRange) {
-                case 'Under 15 min':
-                  if (recipe.cookTime.contains('5 min') ||
-                      recipe.cookTime.contains('8 min') ||
-                      recipe.cookTime.contains('10 min') ||
-                      recipe.cookTime.contains('12 min'))
-                    return true;
-                  break;
-                case '15-30 min':
-                  if (recipe.cookTime.contains('15 min') ||
-                      recipe.cookTime.contains('18 min') ||
-                      recipe.cookTime.contains('20 min') ||
-                      recipe.cookTime.contains('22 min') ||
-                      recipe.cookTime.contains('25 min') ||
-                      recipe.cookTime.contains('30 min'))
-                    return true;
-                  break;
-                case 'Over 30 min':
-                  if (recipe.cookTime.contains('35 min') ||
-                      recipe.cookTime.contains('40 min') ||
-                      recipe.cookTime.contains('45 min') ||
-                      recipe.cookTime.contains('50 min') ||
-                      recipe.cookTime.contains('60 min') ||
-                      recipe.cookTime.contains('4 hours'))
-                    return true;
-                  break;
-              }
-            }
-            return false;
-          }).toList();
+          filtered
+              .where((recipe) => _matchesCookTimeFilter(recipe.cookTime))
+              .toList();
     }
 
+    // Cache the result
+    _cachedFilteredRecipes = filtered;
+    _lastFilterKey = currentKey;
+
     return filtered;
+  }
+
+  // Helper method to check if cook time is quick
+  bool _isQuickCookTime(String cookTime) {
+    return cookTime.contains('5 min') ||
+        cookTime.contains('8 min') ||
+        cookTime.contains('10 min') ||
+        cookTime.contains('12 min');
+  }
+
+  // Helper method to match cook time filters
+  bool _matchesCookTimeFilter(String cookTime) {
+    for (String timeRange in selectedCookTimes) {
+      switch (timeRange) {
+        case 'Under 15 min':
+          if (_isQuickCookTime(cookTime)) return true;
+          break;
+        case '15-30 min':
+          if (cookTime.contains('15 min') ||
+              cookTime.contains('18 min') ||
+              cookTime.contains('20 min') ||
+              cookTime.contains('22 min') ||
+              cookTime.contains('25 min') ||
+              cookTime.contains('30 min'))
+            return true;
+          break;
+        case 'Over 30 min':
+          if (cookTime.contains('35 min') ||
+              cookTime.contains('40 min') ||
+              cookTime.contains('45 min') ||
+              cookTime.contains('50 min') ||
+              cookTime.contains('60 min') ||
+              cookTime.contains('4 hours'))
+            return true;
+          break;
+      }
+    }
+    return false;
   }
 
   List<Recipe> get displayedRecipes {
@@ -503,6 +471,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
           isFavorite: !allRecipes[recipeIndex].isFavorite,
         );
       }
+      // Clear cache when favorites change
+      _cachedFilteredRecipes = null;
     });
   }
 
@@ -530,161 +500,220 @@ class _RecipesScreenState extends State<RecipesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setModalState) => Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Filter Recipes',
-                            style: TextStyle(
-                              fontFamily: 'Nunito',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 18,
-                              color: Color(0xFF111827),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Difficulty Filter
-                      const Text(
-                        'Difficulty',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        children:
-                            ['Easy', 'Medium', 'Hard'].map((difficulty) {
-                              final isSelected = selectedDifficulties.contains(
-                                difficulty,
-                              );
-                              return FilterChip(
-                                label: Text(difficulty),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  setModalState(() {
-                                    if (selected) {
-                                      selectedDifficulties.add(difficulty);
-                                    } else {
-                                      selectedDifficulties.remove(difficulty);
-                                    }
-                                  });
-                                },
-                                selectedColor: const Color(
-                                  0xFF10B981,
-                                ).withOpacity(0.2),
-                                checkmarkColor: const Color(0xFF10B981),
-                              );
-                            }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Cook Time Filter
-                      const Text(
-                        'Cook Time',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        children:
-                            ['Under 15 min', '15-30 min', 'Over 30 min'].map((
-                              timeRange,
-                            ) {
-                              final isSelected = selectedCookTimes.contains(
-                                timeRange,
-                              );
-                              return FilterChip(
-                                label: Text(timeRange),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  setModalState(() {
-                                    if (selected) {
-                                      selectedCookTimes.add(timeRange);
-                                    } else {
-                                      selectedCookTimes.remove(timeRange);
-                                    }
-                                  });
-                                },
-                                selectedColor: const Color(
-                                  0xFF10B981,
-                                ).withOpacity(0.2),
-                                checkmarkColor: const Color(0xFF10B981),
-                              );
-                            }).toList(),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Apply Filters Button
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                setModalState(() {
-                                  selectedDifficulties.clear();
-                                  selectedCookTimes.clear();
-                                });
-                              },
-                              child: const Text('Clear All'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _resetPagination();
-                                });
-                                Navigator.pop(context);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF10B981),
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Apply Filters'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: MediaQuery.of(context).viewInsets.bottom,
-                      ),
-                    ],
-                  ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                  left: 20,
+                  right: 20,
+                  top: 20,
                 ),
-          ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Filter Recipes',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 20,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Difficulty Filter
+                    const Text(
+                      'Difficulty',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          ['Easy', 'Medium', 'Hard'].map((difficulty) {
+                            final isSelected = selectedDifficulties.contains(
+                              difficulty,
+                            );
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    selectedDifficulties.remove(difficulty);
+                                  } else {
+                                    selectedDifficulties.add(difficulty);
+                                  }
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? const Color(0xFF10B981)
+                                          : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFFD1D5DB),
+                                  ),
+                                ),
+                                child: Text(
+                                  difficulty,
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color:
+                                        isSelected
+                                            ? Colors.white
+                                            : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    // Cook Time Filter
+                    const Text(
+                      'Cook Time',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          ['Under 15 min', '15-30 min', 'Over 30 min'].map((
+                            timeRange,
+                          ) {
+                            final isSelected = selectedCookTimes.contains(
+                              timeRange,
+                            );
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    selectedCookTimes.remove(timeRange);
+                                  } else {
+                                    selectedCookTimes.add(timeRange);
+                                  }
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? const Color(0xFF10B981)
+                                          : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFFD1D5DB),
+                                  ),
+                                ),
+                                child: Text(
+                                  timeRange,
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color:
+                                        isSelected
+                                            ? Colors.white
+                                            : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+                    // Action buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              setModalState(() {
+                                selectedDifficulties.clear();
+                                selectedCookTimes.clear();
+                              });
+                            },
+                            child: const Text('Clear All'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _resetPagination();
+                                // Clear cache when filters change
+                                _cachedFilteredRecipes = null;
+                              });
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Apply Filters'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -701,6 +730,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
       setState(() {
         searchQuery = _searchController.text;
         _resetPagination();
+        // Clear cache when search changes
+        _cachedFilteredRecipes = null;
       });
     });
   }
@@ -713,6 +744,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final displayed = displayedRecipes;
 
     return Scaffold(
@@ -732,63 +764,67 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 ),
               ],
             ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20.0,
-                vertical: 20.0,
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Recipes',
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18,
-                      color: Color(0xFF111827),
-                      height: 1.3,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Recipe Suggestions',
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                            color: Color(0xFF111827),
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${filteredRecipes.length} recipes available',
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 14,
+                            color: Color(0xFF6B7280),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Row(
                     children: [
-                      // Filter button
                       GestureDetector(
                         onTap: _showFilterBottomSheet,
                         child: Container(
-                          width: 44,
-                          height: 44,
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color:
-                                (selectedDifficulties.isNotEmpty ||
-                                        selectedCookTimes.isNotEmpty)
-                                    ? const Color(0xFFD1FAE5)
-                                    : const Color(0xFFF3F4F6),
+                            color: const Color(0xFFF3F4F6),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(
-                            Icons.filter_alt_outlined,
-                            color:
-                                (selectedDifficulties.isNotEmpty ||
-                                        selectedCookTimes.isNotEmpty)
-                                    ? const Color(0xFF065F46)
-                                    : const Color(0xFF4B5563),
+                          child: const Icon(
+                            Icons.tune_rounded,
+                            color: Color(0xFF4B5563),
                             size: 20,
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Favorites button
                       GestureDetector(
                         onTap: () {
                           setState(() {
                             showFavoritesOnly = !showFavoritesOnly;
                             _resetPagination();
+                            // Clear cache when favorites filter changes
+                            _cachedFilteredRecipes = null;
                           });
                         },
                         child: Container(
-                          width: 44,
-                          height: 44,
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color:
                                 showFavoritesOnly

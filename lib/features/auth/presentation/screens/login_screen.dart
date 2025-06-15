@@ -3,6 +3,7 @@ import 'package:eat_soon/features/auth/presentation/screens/signup_screen.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/custom_textfield.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:eat_soon/features/home/presentation/screens/home_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -93,9 +94,8 @@ class _LoginScreenState extends State<LoginScreen>
       );
 
       if (success) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        // Don't manually navigate - let AuthWrapper handle it automatically
+        // The AuthProvider state change will trigger AuthWrapper to show AppShell
       } else {
         final errorMessage = authProvider.errorMessage ?? 'Login failed';
         debugPrint('Login Error: $errorMessage');
@@ -119,9 +119,8 @@ class _LoginScreenState extends State<LoginScreen>
     final success = await authProvider.signInWithGoogle();
 
     if (success) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+      // Don't manually navigate - let AuthWrapper handle it automatically
+      // The AuthProvider state change will trigger AuthWrapper to show AppShell
     } else if (authProvider.errorMessage != null) {
       final errorMessage = authProvider.errorMessage!;
       debugPrint('Google Sign-In Error: $errorMessage');
