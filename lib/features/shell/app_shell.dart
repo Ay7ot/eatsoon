@@ -1,4 +1,3 @@
-import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/home/presentation/screens/home_screen.dart';
 import 'package:eat_soon/features/inventory/presentation/screens/inventory_screen.dart';
 import 'package:eat_soon/features/scanner/presentation/screens/scan_screen.dart';

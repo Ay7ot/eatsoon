@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:eat_soon/features/home/models/food_item.dart';
+import 'package:eat_soon/features/home/services/activity_service.dart';
 
 class InventoryService {
   static final InventoryService _instance = InventoryService._internal();
@@ -10,6 +11,7 @@ class InventoryService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ActivityService _activityService = ActivityService();
 
   // Get current user ID
   String? get _currentUserId => _auth.currentUser?.uid;
@@ -55,6 +57,9 @@ class InventoryService {
           .doc(_currentUserId)
           .collection('items')
           .add(foodItem.toFirestore());
+
+      // Log activity
+      await _activityService.logItemAdded(name, imageUrl);
 
       debugPrint('Food item added successfully with ID: ${docRef.id}');
       return docRef.id;
@@ -126,6 +131,26 @@ class InventoryService {
         throw 'No user is currently signed in.';
       }
 
+      // Get current item name for activity logging
+      String itemName = 'Item';
+      String? currentImageUrl;
+      try {
+        final doc =
+            await _firestore
+                .collection('inventory')
+                .doc(_currentUserId)
+                .collection('items')
+                .doc(itemId)
+                .get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          itemName = data['name'] ?? 'Item';
+          currentImageUrl = data['imageUrl'];
+        }
+      } catch (e) {
+        debugPrint('Error getting current item data: $e');
+      }
+
       final updateData = <String, dynamic>{
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -152,6 +177,11 @@ class InventoryService {
           .doc(itemId)
           .update(updateData);
 
+      // Log activity with the updated name if provided, otherwise use current name
+      final activityName = name ?? itemName;
+      final activityImageUrl = imageUrl ?? currentImageUrl;
+      await _activityService.logItemUpdated(activityName, activityImageUrl);
+
       debugPrint('Food item updated successfully');
     } catch (e) {
       debugPrint('Error updating food item: $e');
@@ -166,12 +196,35 @@ class InventoryService {
         throw 'No user is currently signed in.';
       }
 
+      // Get item details for activity logging before deletion
+      String itemName = 'Item';
+      String? imageUrl;
+      try {
+        final doc =
+            await _firestore
+                .collection('inventory')
+                .doc(_currentUserId)
+                .collection('items')
+                .doc(itemId)
+                .get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          itemName = data['name'] ?? 'Item';
+          imageUrl = data['imageUrl'];
+        }
+      } catch (e) {
+        debugPrint('Error getting item data before deletion: $e');
+      }
+
       await _firestore
           .collection('inventory')
           .doc(_currentUserId)
           .collection('items')
           .doc(itemId)
           .delete();
+
+      // Log activity
+      await _activityService.logItemDeleted(itemName, imageUrl);
 
       debugPrint('Food item deleted successfully');
     } catch (e) {

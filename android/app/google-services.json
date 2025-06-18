@@ -12,7 +12,20 @@
           "package_name": "com.example.eat_soon"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "193166714237-ct3khbpeov9vuf4dnaa5blsi97i0a0gl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.eat_soon",
+            "certificate_hash": "ac776235f58ac206b6a2e2efdddce092e78b8b4e"
+          }
+        },
+        {
+          "client_id": "193166714237-srhb3ks8tf35hta28jha4urk5jf91ar6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDzyGGG10mWptfMHF-e8PY6MbtcH4LP6A4"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "193166714237-srhb3ks8tf35hta28jha4urk5jf91ar6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "193166714237-cp1hsjkchvrhen8gi2c14po82fiaoug9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.eatSoon"
+              }
+            }
+          ]
         }
       }
     }

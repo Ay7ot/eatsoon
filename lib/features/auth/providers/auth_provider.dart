@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eat_soon/features/auth/data/services/auth_service.dart';
 import 'package:eat_soon/features/auth/data/models/user_model.dart';
+import 'package:eat_soon/features/home/services/activity_service.dart';
 
 enum AuthStatus { authenticated, unauthenticated, loading }
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final ActivityService _activityService = ActivityService();
 
   AuthStatus _status = AuthStatus.loading;
   UserModel? _user;
@@ -45,6 +47,9 @@ class AuthProvider extends ChangeNotifier {
       );
       _status = AuthStatus.authenticated;
       debugPrint('Status set to authenticated');
+
+      // Cleanup old activities when user signs in
+      _cleanupOldActivities();
     } else {
       _user = null;
       _status = AuthStatus.unauthenticated;
@@ -52,6 +57,13 @@ class AuthProvider extends ChangeNotifier {
     }
     notifyListeners();
     debugPrint('Listeners notified, current status: $_status');
+  }
+
+  void _cleanupOldActivities() {
+    // Run cleanup in background without blocking UI
+    Future.delayed(const Duration(seconds: 2), () {
+      _activityService.cleanupOldActivities();
+    });
   }
 
   void _setLoading(bool loading) {

@@ -2,9 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
+import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
+import 'package:eat_soon/features/home/models/food_item.dart';
+import 'package:eat_soon/features/home/services/activity_service.dart';
+import 'package:eat_soon/features/home/models/activity_model.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final InventoryService _inventoryService = InventoryService();
+  final ActivityService _activityService = ActivityService();
+  late final Stream<List<FoodItem>> _itemsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _itemsStream = _inventoryService.getFoodItemsStream();
+  }
+
+  DateTime _dateOnly(DateTime dt) {
+    return DateTime(dt.year, dt.month, dt.day);
+  }
+
+  Map<String, int> _calculateStatistics(List<FoodItem> items) {
+    final today = _dateOnly(DateTime.now());
+    int expiring = 0;
+    int total = items.length;
+
+    for (final item in items) {
+      final expirationDay = _dateOnly(item.expirationDate);
+      final daysUntilExpiration = expirationDay.difference(today).inDays;
+
+      if (daysUntilExpiration > 0 && daysUntilExpiration <= 3) {
+        expiring++;
+      }
+    }
+
+    return {'expiring': expiring, 'total': total};
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,38 +52,92 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: const CustomAppBar(title: 'Eatsoon'),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              // Statistics Cards
-              _buildStatisticsCards(),
-              const SizedBox(height: 32),
-              // Quick Actions
-              _buildQuickActions(context),
-              const SizedBox(height: 32),
-              // Recent Activity
-              _buildRecentActivity(),
-              const SizedBox(height: 32),
-              // Family Members
-              _buildFamilyMembers(),
-              const SizedBox(height: 96), // Bottom padding for navigation
-            ],
-          ),
+        child: StreamBuilder<List<FoodItem>>(
+          stream: _itemsStream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _buildLoadingState();
+            }
+
+            if (snapshot.hasError) {
+              return _buildErrorState();
+            }
+
+            final items = snapshot.data ?? [];
+            final statistics = _calculateStatistics(items);
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  // Statistics Cards
+                  _buildStatisticsCards(statistics),
+                  const SizedBox(height: 32),
+                  // Quick Actions
+                  _buildQuickActions(context),
+                  const SizedBox(height: 32),
+                  // Recent Activity
+                  _buildRecentActivity(),
+                  const SizedBox(height: 32),
+                  // Family Members
+                  _buildFamilyMembers(),
+                  const SizedBox(height: 96), // Bottom padding for navigation
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildStatisticsCards() {
+  Widget _buildLoadingState() {
+    return const Center(
+      child: CircularProgressIndicator(color: Color(0xFF10B981)),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Color(0xFFEF4444)),
+          const SizedBox(height: 16),
+          const Text(
+            'Error loading data',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {});
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticsCards(Map<String, int> statistics) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             title: 'Expiring\nSoon',
-            value: '3',
+            value: '${statistics['expiring'] ?? 0}',
             valueColor: const Color(0xFFEF4444),
             backgroundColor: const Color(0xFFFFFFFF),
             iconBackgroundColor: const Color(0xFFFEE2E2),
@@ -58,7 +152,7 @@ class HomeScreen extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             title: 'Total Items',
-            value: '24',
+            value: '${statistics['total'] ?? 0}',
             valueColor: const Color(0xFF10B981),
             backgroundColor: const Color(0xFFFFFFFF),
             iconBackgroundColor: const Color(0xFFD1FAE5),
@@ -254,7 +348,14 @@ class HomeScreen extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14.4),
-                  onTap: () {},
+                  onTap: () {
+                    // Find the AppShell and switch to recipes tab (index 3)
+                    final appShell =
+                        context.findAncestorStateOfType<AppShellState>();
+                    if (appShell != null) {
+                      appShell.onItemTapped(3); // Switch to recipes tab
+                    }
+                  },
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -303,35 +404,151 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Column(
-          children: [
-            _buildActivityItem(
-              imageAsset:
-                  'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=400&fit=crop',
-              title: 'Milk added to pantry',
-              subtitle: 'Expires in 5 days',
-              timeAgo: '2h ago',
-            ),
-            const SizedBox(height: 12),
-            _buildActivityItem(
-              imageAsset:
-                  'https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop',
-              title: 'Recipe suggested',
-              subtitle: 'Banana bread recipe',
-              timeAgo: '1d ago',
-            ),
-          ],
+        StreamBuilder<List<ActivityModel>>(
+          stream: _activityService.getActivitiesStream(limit: 3),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _buildActivityLoadingState();
+            }
+
+            if (snapshot.hasError) {
+              return _buildActivityErrorState();
+            }
+
+            final activities = snapshot.data ?? [];
+
+            if (activities.isEmpty) {
+              return _buildNoActivityState();
+            }
+
+            return Column(
+              children:
+                  activities
+                      .map(
+                        (activity) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _buildActivityItemFromModel(activity),
+                        ),
+                      )
+                      .toList(),
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildActivityItem({
-    required String imageAsset,
-    required String title,
-    required String subtitle,
-    required String timeAgo,
-  }) {
+  Widget _buildActivityLoadingState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF10B981),
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityErrorState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.error_outline, size: 32, color: Color(0xFFEF4444)),
+          SizedBox(height: 8),
+          Text(
+            'Error loading activity',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoActivityState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SvgPicture.asset(
+            'assets/icons/inventory_icon.svg',
+            width: 32,
+            height: 32,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF9CA3AF),
+              BlendMode.srcIn,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'No recent activity',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Start by adding items to your pantry',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w400,
+              fontSize: 14,
+              color: Color(0xFF9CA3AF),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItemFromModel(ActivityModel activity) {
+    final Color activityColor = Color(activity.colorValue);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -357,47 +574,11 @@ class HomeScreen extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8.6),
-              child:
-                  imageAsset.startsWith('http')
-                      ? Image.network(
-                        imageAsset,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            width: 56,
-                            height: 56,
-                            color: const Color(0xFFF8FAFC),
-                            child: const Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color(0xFF10B981),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 56,
-                            height: 56,
-                            color: const Color(0xFFF8FAFC),
-                            child: const Icon(
-                              Icons.image_outlined,
-                              color: Color(0xFF94A3B8),
-                              size: 20,
-                            ),
-                          );
-                        },
-                      )
-                      : const Icon(Icons.image, color: Color(0xFF9CA3AF)),
+              child: _buildActivityImage(
+                activity.imageUrl,
+                activity.iconPath,
+                activityColor,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -406,7 +587,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  activity.title,
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w500,
@@ -415,22 +596,25 @@ class HomeScreen extends StatelessWidget {
                     height: 1.2,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
-                    height: 1.2,
+                if (activity.subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    activity.subtitle,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                      height: 1.2,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: 12),
           Text(
-            timeAgo,
+            activity.timeAgo,
             style: const TextStyle(
               fontFamily: 'Inter',
               fontWeight: FontWeight.w400,
@@ -440,6 +624,63 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActivityImage(
+    String? imageUrl,
+    String iconPath,
+    Color activityColor,
+  ) {
+    // Priority 1: Show actual item image if available
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 56,
+            height: 56,
+            color: const Color(0xFFF8FAFC),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                ),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          // If image fails to load, fall back to icon
+          return _buildActivityIcon(iconPath, activityColor);
+        },
+      );
+    }
+
+    // Priority 2: Show activity type icon
+    return _buildActivityIcon(iconPath, activityColor);
+  }
+
+  Widget _buildActivityIcon(String iconPath, Color activityColor) {
+    return Container(
+      width: 56,
+      height: 56,
+      color: activityColor.withOpacity(0.1),
+      child: Center(
+        child: SvgPicture.asset(
+          iconPath,
+          width: 24,
+          height: 24,
+          colorFilter: ColorFilter.mode(activityColor, BlendMode.srcIn),
+        ),
       ),
     );
   }

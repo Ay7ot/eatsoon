@@ -5,6 +5,7 @@ import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
+git add .import 'package:eat_soon/features/home/services/activity_service.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   final String? scannedImagePath;
@@ -29,6 +30,7 @@ class ConfirmationScreen extends StatefulWidget {
 class _ConfirmationScreenState extends State<ConfirmationScreen> {
   final _formKey = GlobalKey<FormState>();
   final InventoryService _inventoryService = InventoryService();
+  final ActivityService _activityService = ActivityService();
 
   late TextEditingController _productNameController;
   late TextEditingController _expiryDateController;
@@ -51,6 +53,14 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     );
     _quantityController = TextEditingController(text: '1');
     _notesController = TextEditingController();
+
+    // Log scan activity when screen is initialized
+    _logScanActivity();
+  }
+
+  void _logScanActivity() {
+    // Log that a scan was performed
+    _activityService.logScanPerformed(widget.detectedProductName);
   }
 
   @override
@@ -478,13 +488,17 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   label: 'Category',
                   value: _selectedCategory,
                   icon: Icons.category_outlined,
-                  items: [
-                    'Dairy',
-                    'Meat',
-                    'Vegetables',
-                    'Fruits',
-                    'Grains',
+                  items: const [
+                    'Bakery',
                     'Beverages',
+                    'Dairy',
+                    'Frozen',
+                    'Fruits',
+                    'Meat',
+                    'Pantry',
+                    'Snacks',
+                    'Vegetables',
+                    'Other',
                   ],
                   onChanged:
                       (value) => setState(() => _selectedCategory = value!),
@@ -514,7 +528,18 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   label: 'Unit',
                   value: _selectedUnit,
                   icon: Icons.straighten,
-                  items: ['Liters', 'Pieces', 'Kg', 'Grams', 'Bottles', 'Cans'],
+                  items: const [
+                    'Liters',
+                    'ml',
+                    'Kg',
+                    'Grams',
+                    'Pieces',
+                    'Pack(s)',
+                    'Bottle(s)',
+                    'Can(s)',
+                    'lbs',
+                    'oz',
+                  ],
                   onChanged: (value) => setState(() => _selectedUnit = value!),
                 ),
               ),

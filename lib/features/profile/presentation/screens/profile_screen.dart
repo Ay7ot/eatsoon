@@ -5,6 +5,8 @@ import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart'
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:eat_soon/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
+import 'package:eat_soon/features/home/services/activity_service.dart';
+import 'package:eat_soon/features/home/models/activity_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -41,6 +43,8 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(user) {
+    final ActivityService activityService = ActivityService();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -120,31 +124,55 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Stats Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatColumn(
-                  '47',
-                  'Items\nAdded',
-                  AppTheme.secondaryColor,
-                ),
-              ),
-              Expanded(
-                child: _buildStatColumn(
-                  '23',
-                  'Recipes\nUsed',
-                  AppTheme.primaryColor,
-                ),
-              ),
-              Expanded(
-                child: _buildStatColumn(
-                  '89',
-                  'Days\nActive',
-                  const Color(0xFFF59E0B),
-                ),
-              ),
-            ],
+          // Stats Row with Real Activity Data
+          StreamBuilder<List<ActivityModel>>(
+            stream: activityService.getActivitiesStream(limit: 100),
+            builder: (context, snapshot) {
+              final activities = snapshot.data ?? [];
+
+              // Calculate real statistics
+              final itemsAdded =
+                  activities
+                      .where((a) => a.type == ActivityType.itemAdded)
+                      .length;
+              final recipesViewed =
+                  activities
+                      .where((a) => a.type == ActivityType.recipeViewed)
+                      .length;
+              final daysActive =
+                  activities.isNotEmpty
+                      ? DateTime.now()
+                              .difference(activities.last.timestamp)
+                              .inDays +
+                          1
+                      : 0;
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildStatColumn(
+                      '$itemsAdded',
+                      'Items\nAdded',
+                      AppTheme.secondaryColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStatColumn(
+                      '$recipesViewed',
+                      'Recipes\nViewed',
+                      AppTheme.primaryColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStatColumn(
+                      '$daysActive',
+                      'Days\nActive',
+                      const Color(0xFFF59E0B),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

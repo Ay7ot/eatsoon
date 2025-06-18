@@ -9,6 +9,7 @@ import 'package:eat_soon/features/auth/presentation/widgets/auth_wrapper.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/splash/splash_screen.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Import your app components (these will be created later)
 // import 'core/router/app_router.dart';
@@ -17,8 +18,9 @@ import 'package:flutter/foundation.dart';
 // import 'features/notifications/providers/notification_provider.dart';
 // import 'features/recipes/providers/recipe_provider.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

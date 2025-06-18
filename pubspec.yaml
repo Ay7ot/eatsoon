@@ -94,6 +94,9 @@ dependencies:
   flutter_spinkit: ^5.2.0
   lottie: ^3.1.2
 
+  # New dependency
+  flutter_dotenv: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -126,6 +129,7 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/animations/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

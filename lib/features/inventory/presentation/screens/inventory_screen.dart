@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
-import 'package:eat_soon/core/theme/figma_colors.dart';
+import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
+import 'package:eat_soon/features/home/models/food_item.dart';
+import 'package:eat_soon/features/inventory/presentation/screens/edit_item_screen.dart';
+import 'package:shimmer/shimmer.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -13,153 +16,95 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String selectedFilter = 'All Items';
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
-  bool showSortOptions = false;
   String sortBy = 'expiration'; // 'expiration', 'name', 'category'
   Set<String> selectedCategories = {};
+  final InventoryService _inventoryService = InventoryService();
+
+  // Initialize the stream once to avoid rebuilding and refetching on every
+  // state change (e.g., while typing in the search bar).
+  late final Stream<List<FoodItem>> _itemsStream =
+      _inventoryService.getFoodItemsStream();
 
   DateTime _dateOnly(DateTime dt) {
     return DateTime(dt.year, dt.month, dt.day);
   }
 
-  // Dummy data matching the Figma design
-  final List<InventoryItem> dummyItems = [
-    InventoryItem(
-      name: 'Organic Milk',
-      category: 'Dairy • 1 liter',
-      expirationText: 'Expires in 1 day',
-      statusColor: const Color(0xFFEF4444),
-      statusBadge: 'Urgent',
-      badgeColor: const Color(0xFFFEE2E2),
-      badgeTextColor: const Color(0xFF991B1B),
-      borderColor: const Color(0xFFEF4444),
-      emoji: '🥛',
-      expirationDate: DateTime.now().add(const Duration(days: 1)),
-      categoryType: 'Dairy',
-    ),
-    InventoryItem(
-      name: 'Fresh Bananas',
-      category: 'Fruits • 6 pieces',
-      expirationText: 'Expires today',
-      statusColor: const Color(0xFFF59E0B),
-      statusBadge: 'Today',
-      badgeColor: const Color(0xFFFEF3C7),
-      badgeTextColor: const Color(0xFF92400E),
-      borderColor: const Color(0xFFF59E0B),
-      emoji: '🍌',
-      expirationDate: DateTime.now(),
-      categoryType: 'Fruits',
-    ),
-    InventoryItem(
-      name: 'Whole Grain Bread',
-      category: 'Bakery • 1 loaf',
-      expirationText: 'Expires in 5 days',
-      statusColor: const Color(0xFF10B981),
-      statusBadge: 'Fresh',
-      badgeColor: const Color(0xFFD1FAE5),
-      badgeTextColor: const Color(0xFF065F46),
-      borderColor: const Color(0xFF10B981),
-      emoji: '🍞',
-      expirationDate: DateTime.now().add(const Duration(days: 5)),
-      categoryType: 'Bakery',
-    ),
-    InventoryItem(
-      name: 'Greek Yogurt',
-      category: 'Dairy • 500g',
-      expirationText: 'Expires in 2 days',
-      statusColor: const Color(0xFFF59E0B),
-      statusBadge: 'Soon',
-      badgeColor: const Color(0xFFFEF3C7),
-      badgeTextColor: const Color(0xFF92400E),
-      borderColor: const Color(0xFFF59E0B),
-      emoji: '🥛',
-      expirationDate: DateTime.now().add(const Duration(days: 2)),
-      categoryType: 'Dairy',
-    ),
-    InventoryItem(
-      name: 'Fresh Spinach',
-      category: 'Vegetables • 250g',
-      expirationText: 'Expires today',
-      statusColor: const Color(0xFFEF4444),
-      statusBadge: 'Today',
-      badgeColor: const Color(0xFFFEE2E2),
-      badgeTextColor: const Color(0xFF991B1B),
-      borderColor: const Color(0xFFEF4444),
-      emoji: '🥬',
-      expirationDate: DateTime.now(),
-      categoryType: 'Vegetables',
-    ),
-    InventoryItem(
-      name: 'Chicken Breast',
-      category: 'Meat • 500g',
-      expirationText: 'Expires in 3 days',
-      statusColor: const Color(0xFF10B981),
-      statusBadge: 'Fresh',
-      badgeColor: const Color(0xFFD1FAE5),
-      badgeTextColor: const Color(0xFF065F46),
-      borderColor: const Color(0xFF10B981),
-      emoji: '🍗',
-      expirationDate: DateTime.now().add(const Duration(days: 3)),
-      categoryType: 'Meat',
-    ),
-    InventoryItem(
-      name: 'Cheddar Cheese',
-      category: 'Dairy • 200g',
-      expirationText: 'Expires in 1 day',
-      statusColor: const Color(0xFFEF4444),
-      statusBadge: 'Urgent',
-      badgeColor: const Color(0xFFFEE2E2),
-      badgeTextColor: const Color(0xFF991B1B),
-      borderColor: const Color(0xFFEF4444),
-      emoji: '🧀',
-      expirationDate: DateTime.now().add(const Duration(days: 1)),
-      categoryType: 'Dairy',
-    ),
-    InventoryItem(
-      name: 'Fresh Apples',
-      category: 'Fruits • 4 pieces',
-      expirationText: 'Expires in 6 days',
-      statusColor: const Color(0xFF10B981),
-      statusBadge: 'Fresh',
-      badgeColor: const Color(0xFFD1FAE5),
-      badgeTextColor: const Color(0xFF065F46),
-      borderColor: const Color(0xFF10B981),
-      emoji: '🍎',
-      expirationDate: DateTime.now().add(const Duration(days: 6)),
-      categoryType: 'Fruits',
-    ),
-    InventoryItem(
-      name: 'Pasta',
-      category: 'Pantry • 500g',
-      expirationText: 'Expires in 30 days',
-      statusColor: const Color(0xFF10B981),
-      statusBadge: 'Fresh',
-      badgeColor: const Color(0xFFD1FAE5),
-      badgeTextColor: const Color(0xFF065F46),
-      borderColor: const Color(0xFF10B981),
-      emoji: '🍝',
-      expirationDate: DateTime.now().add(const Duration(days: 30)),
-      categoryType: 'Pantry',
-    ),
-    InventoryItem(
-      name: 'Expired Milk',
-      category: 'Dairy • 1 liter',
-      expirationText: 'Expired 2 days ago',
-      statusColor: const Color(0xFF7F1D1D),
-      statusBadge: 'Expired',
-      badgeColor: const Color(0xFFFEE2E2),
-      badgeTextColor: const Color(0xFF7F1D1D),
-      borderColor: const Color(0xFF7F1D1D),
-      emoji: '🥛',
-      expirationDate: DateTime.now().subtract(const Duration(days: 2)),
-      categoryType: 'Dairy',
-    ),
-  ];
+  // Fallback emojis for different categories
+  String _getEmojiForCategory(String category) {
+    final categoryLower = category.toLowerCase();
 
-  List<String> get allCategories =>
-      dummyItems.map((e) => e.categoryType).toSet().toList()..sort();
+    // Dairy products
+    if (categoryLower.contains('dairy') ||
+        categoryLower.contains('milk') ||
+        categoryLower.contains('cheese') ||
+        categoryLower.contains('yogurt')) {
+      return '🥛';
+    }
 
-  List<InventoryItem> get filteredItems {
-    List<InventoryItem> filtered = List.from(dummyItems);
+    // Fruits
+    if (categoryLower.contains('fruit') ||
+        categoryLower.contains('apple') ||
+        categoryLower.contains('banana') ||
+        categoryLower.contains('orange')) {
+      return '🍎';
+    }
+
+    // Vegetables
+    if (categoryLower.contains('vegetable') ||
+        categoryLower.contains('lettuce') ||
+        categoryLower.contains('spinach') ||
+        categoryLower.contains('carrot')) {
+      return '🥬';
+    }
+
+    // Meat
+    if (categoryLower.contains('meat') ||
+        categoryLower.contains('chicken') ||
+        categoryLower.contains('beef') ||
+        categoryLower.contains('pork')) {
+      return '🍗';
+    }
+
+    // Bakery
+    if (categoryLower.contains('bakery') ||
+        categoryLower.contains('bread') ||
+        categoryLower.contains('baked')) {
+      return '🍞';
+    }
+
+    // Pantry/Dry goods
+    if (categoryLower.contains('pantry') ||
+        categoryLower.contains('pasta') ||
+        categoryLower.contains('rice') ||
+        categoryLower.contains('cereal')) {
+      return '🥫';
+    }
+
+    // Beverages
+    if (categoryLower.contains('beverage') ||
+        categoryLower.contains('drink') ||
+        categoryLower.contains('juice')) {
+      return '🥤';
+    }
+
+    // Snacks
+    if (categoryLower.contains('snack') ||
+        categoryLower.contains('chip') ||
+        categoryLower.contains('cookie')) {
+      return '🍪';
+    }
+
+    // Frozen
+    if (categoryLower.contains('frozen')) {
+      return '🧊';
+    }
+
+    // Default fallback
+    return '🥫';
+  }
+
+  List<FoodItem> _filterItems(List<FoodItem> items) {
+    List<FoodItem> filtered = List.from(items);
 
     // Apply search filter
     if (searchQuery.isNotEmpty) {
@@ -168,20 +113,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
             return item.name.toLowerCase().contains(
                   searchQuery.toLowerCase(),
                 ) ||
-                item.category.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ||
-                item.categoryType.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                );
+                item.category.toLowerCase().contains(searchQuery.toLowerCase());
           }).toList();
     }
 
-    // Apply category filter from the icon
+    // Apply category filter
     if (selectedCategories.isNotEmpty) {
       filtered =
           filtered.where((item) {
-            return selectedCategories.contains(item.categoryType);
+            return selectedCategories.contains(item.category);
           }).toList();
     }
 
@@ -227,20 +167,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
         filtered.sort((a, b) => a.name.compareTo(b.name));
         break;
       case 'category':
-        filtered.sort((a, b) => a.categoryType.compareTo(b.categoryType));
+        filtered.sort((a, b) => a.category.compareTo(b.category));
         break;
     }
 
     return filtered;
   }
 
-  Map<String, int> get statisticsData {
+  Map<String, int> _calculateStatistics(List<FoodItem> items) {
     final today = _dateOnly(DateTime.now());
     int expiring = 0;
     int todayCount = 0;
-    int total = dummyItems.length;
+    int total = items.length;
 
-    for (final item in dummyItems) {
+    for (final item in items) {
       final expirationDay = _dateOnly(item.expirationDate);
       final daysUntilExpiration = expirationDay.difference(today).inDays;
 
@@ -270,7 +210,213 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.dispose();
   }
 
-  void _showCategoryFilterBottomSheet() {
+  void _showDeleteConfirmation(FoodItem item) {
+    showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Warning Icon
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(32),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Color(0xFFEF4444),
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Title
+                  const Text(
+                    'Delete Item',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                      color: Color(0xFF111827),
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Content
+                  Text(
+                    'Are you sure you want to delete "${item.name}"? This action cannot be undone.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      color: Color(0xFF6B7280),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(
+                                color: Color(0xFFE5E7EB),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: Color(0xFF374151),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop(true);
+                            try {
+                              await _inventoryService.deleteFoodItem(item.id);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '${item.name} deleted successfully',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error deleting item: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEF4444),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  void _showItemMenu(FoodItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.name,
+                style: const TextStyle(
+                  fontFamily: 'Nunito',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.edit, color: Color(0xFF6B7280)),
+                title: const Text('Edit Item'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditItemScreen(item: item),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Delete Item'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showDeleteConfirmation(item);
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCategoryFilterBottomSheet(List<String> categories) {
     final tempSelectedCategories = Set<String>.from(selectedCategories);
 
     showModalBottomSheet(
@@ -304,14 +450,28 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  if (categories.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        'No categories available',
+                        style: TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 14,
+                        ),
+                      ),
+                    )
+                  else
                   Flexible(
                     child: ListView(
                       shrinkWrap: true,
                       children:
-                          allCategories.map((category) {
+                            categories.map((category) {
                             return CheckboxListTile(
                               title: Text(category),
-                              value: tempSelectedCategories.contains(category),
+                                value: tempSelectedCategories.contains(
+                                  category,
+                                ),
                               onChanged: (bool? value) {
                                 setModalState(() {
                                   if (value == true) {
@@ -441,13 +601,70 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stats = statisticsData;
-    final filtered = filteredItems;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: const CustomAppBar(title: 'Eatsoon'),
-      body: Column(
+      body: StreamBuilder<List<FoodItem>>(
+        stream: _itemsStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const _InventorySkeleton();
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Color(0xFFEF4444),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Error loading inventory',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    snapshot.error.toString(),
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {});
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final allItems = snapshot.data ?? [];
+          final filteredItems = _filterItems(allItems);
+          final statistics = _calculateStatistics(allItems);
+          final allCategories =
+              allItems.map((item) => item.category).toSet().toList()..sort();
+
+          return Column(
         children: [
           // Sticky Header
           Container(
@@ -461,10 +678,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ],
             ),
-            child: Column(
-              children: [
-                // Header with title and action buttons
-                Container(
+                child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20.0,
                     vertical: 20.0,
@@ -511,7 +725,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           const SizedBox(width: 12),
                           // Filter button
                           GestureDetector(
-                            onTap: _showCategoryFilterBottomSheet,
+                            onTap:
+                                () => _showCategoryFilterBottomSheet(
+                                  allCategories,
+                                ),
                             child: Container(
                               width: 44,
                               height: 44,
@@ -543,8 +760,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                     ],
                   ),
-                ),
-              ],
             ),
           ),
 
@@ -554,7 +769,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               child: Column(
                 children: [
                   // Statistics Cards
-                  _buildStatisticsCards(stats),
+                      _buildStatisticsCards(statistics),
                   const SizedBox(height: 24),
 
                   // Filter Tabs
@@ -569,15 +784,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   if (searchQuery.isNotEmpty ||
                       selectedFilter != 'All Items' ||
                       selectedCategories.isNotEmpty)
-                    _buildResultsInfo(filtered.length),
+                        _buildResultsInfo(filteredItems.length),
 
                   // Inventory Items
-                  _buildInventoryList(filtered),
+                      _buildInventoryList(filteredItems),
                 ],
               ),
             ),
           ),
         ],
+          );
+        },
       ),
     );
   }
@@ -710,52 +927,48 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Count & Icon row at the top
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                label,
-                style: const TextStyle(
+                value,
+                style: TextStyle(
                   fontFamily: 'Inter',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                  color: Color(0xFF6B7280),
-                  height: 1.2,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 26,
+                  color: valueColor,
+                  height: 1.1,
                 ),
               ),
               Container(
-                width: 24,
-                height: 24,
+                width: 32,
+                height: 32,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: iconBgColor,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: iconColor, size: 16),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
             ],
           ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          const Spacer(),
+          // Label just above the progress bar
                 Text(
-                  value,
-                  style: TextStyle(
+            label,
+            style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 26,
-                    color: valueColor,
-                    height: 1.1,
-                  ),
-                ),
-              ],
+              fontWeight: FontWeight.w500,
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+              height: 1.2,
             ),
           ),
+          const SizedBox(height: 4),
+          // Progress bar
           Container(
             height: 3,
             decoration: BoxDecoration(
@@ -896,7 +1109,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  Widget _buildInventoryList(List<InventoryItem> items) {
+  Widget _buildInventoryList(List<FoodItem> items) {
     if (items.isEmpty) {
       String title = 'No items in inventory';
       String subtitle = 'Start by scanning your first product';
@@ -945,13 +1158,41 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  Widget _buildInventoryItem(InventoryItem item) {
+  Widget _buildInventoryItem(FoodItem item) {
+    // Get status badge info based on expiration
+    final daysUntilExpiration = item.daysUntilExpiration;
+    String statusBadge;
+    Color badgeColor;
+    Color badgeTextColor;
+
+    if (daysUntilExpiration < 0) {
+      statusBadge = 'Expired';
+      badgeColor = const Color(0xFFFEE2E2);
+      badgeTextColor = const Color(0xFF7F1D1D);
+    } else if (daysUntilExpiration == 0) {
+      statusBadge = 'Today';
+      badgeColor = const Color(0xFFFEE2E2);
+      badgeTextColor = const Color(0xFF991B1B);
+    } else if (daysUntilExpiration == 1) {
+      statusBadge = 'Urgent';
+      badgeColor = const Color(0xFFFEE2E2);
+      badgeTextColor = const Color(0xFF991B1B);
+    } else if (daysUntilExpiration <= 3) {
+      statusBadge = 'Soon';
+      badgeColor = const Color(0xFFFEF3C7);
+      badgeTextColor = const Color(0xFF92400E);
+    } else {
+      statusBadge = 'Fresh';
+      badgeColor = const Color(0xFFD1FAE5);
+      badgeTextColor = const Color(0xFF065F46);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14.4),
-        border: Border(left: BorderSide(color: item.borderColor, width: 4)),
+        border: Border(left: BorderSide(color: item.statusColor, width: 4)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -974,7 +1215,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
               ),
               child: Center(
-                child: Text(item.emoji, style: const TextStyle(fontSize: 24)),
+                child:
+                    item.imageUrl.isNotEmpty
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.circular(9.6),
+                          child: Image.network(
+                            item.imageUrl,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Text(
+                                _getEmojiForCategory(item.category),
+                                style: const TextStyle(fontSize: 24),
+                              );
+                            },
+                          ),
+                        )
+                        : Text(
+                          _getEmojiForCategory(item.category),
+                          style: const TextStyle(fontSize: 24),
+                        ),
               ),
             ),
             const SizedBox(width: 12),
@@ -996,7 +1257,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    item.category,
+                    '${item.category} • ${item.quantity} ${item.unit}',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w400,
@@ -1030,25 +1291,28 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: item.badgeColor,
+                    color: badgeColor,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    item.statusBadge,
+                    statusBadge,
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w500,
                       fontSize: 12,
-                      color: item.badgeTextColor,
+                      color: badgeTextColor,
                       height: 1.2,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Icon(
+                GestureDetector(
+                  onTap: () => _showItemMenu(item),
+                  child: const Icon(
                   Icons.more_vert_rounded,
                   color: Color(0xFF9CA3AF),
                   size: 20,
+                  ),
                 ),
               ],
             ),
@@ -1059,30 +1323,191 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 }
 
-class InventoryItem {
-  final String name;
-  final String category;
-  final String expirationText;
-  final Color statusColor;
-  final String statusBadge;
-  final Color badgeColor;
-  final Color badgeTextColor;
-  final Color borderColor;
-  final String emoji;
-  final DateTime expirationDate;
-  final String categoryType;
+// Skeleton Loader Widget
+class _InventorySkeleton extends StatelessWidget {
+  const _InventorySkeleton();
 
-  InventoryItem({
-    required this.name,
-    required this.category,
-    required this.expirationText,
-    required this.statusColor,
-    required this.statusBadge,
-    required this.badgeColor,
-    required this.badgeTextColor,
-    required this.borderColor,
-    required this.emoji,
-    required this.expirationDate,
-    required this.categoryType,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Column(
+        children: [
+          // Header Skeleton
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 20.0,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(height: 24, width: 120, color: Colors.white),
+                Row(
+                  children: [
+                    Container(
+                      height: 44,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      height: 44,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  // Statistics
+                  Row(
+                    children: List.generate(
+                      3,
+                      (index) => Expanded(
+                        child: Container(
+                          height: 115,
+                          margin: EdgeInsets.only(left: index == 0 ? 0 : 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14.4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Tabs
+                  SizedBox(
+                    height: 44,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: 4,
+                      itemBuilder:
+                          (context, index) => Container(
+                            width: 100,
+                            height: 44,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Search
+                  Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14.4),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // List
+                  ...List.generate(
+                    5,
+                    (index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14.4),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(9.6),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    height: 16,
+                                    width: double.infinity,
+                                    color: Colors.grey.shade200,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    height: 14,
+                                    width: 150,
+                                    color: Colors.grey.shade200,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    height: 14,
+                                    width: 100,
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Container(
+                                  height: 24,
+                                  width: 60,
+                                  color: Colors.grey.shade200,
+                                ),
+                                const SizedBox(height: 16),
+                                Container(
+                                  height: 20,
+                                  width: 20,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

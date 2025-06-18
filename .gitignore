@@ -44,6 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Flutter/Dart packages
+.packages
+
+# Environment variables
+.env
 
 .env*
 firebase_options.dart
