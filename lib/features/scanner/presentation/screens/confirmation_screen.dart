@@ -4,11 +4,13 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   final String? scannedImagePath;
   final String? detectedProductName;
   final String? detectedExpiryDate;
+  final String? productImageUrl; // OpenFoodFacts image URL
   final VoidCallback? onNavigateToInventory;
 
   const ConfirmationScreen({
@@ -16,6 +18,7 @@ class ConfirmationScreen extends StatefulWidget {
     this.scannedImagePath,
     this.detectedProductName,
     this.detectedExpiryDate,
+    this.productImageUrl,
     this.onNavigateToInventory,
   });
 
@@ -25,6 +28,8 @@ class ConfirmationScreen extends StatefulWidget {
 
 class _ConfirmationScreenState extends State<ConfirmationScreen> {
   final _formKey = GlobalKey<FormState>();
+  final InventoryService _inventoryService = InventoryService();
+
   late TextEditingController _productNameController;
   late TextEditingController _expiryDateController;
   late TextEditingController _quantityController;
@@ -33,6 +38,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   String _selectedCategory = 'Dairy';
   String _selectedUnit = 'Liters';
   String _selectedLocation = 'Refrigerator';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -147,10 +153,6 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
                       // Detection Results Card
                       _buildDetectionResultsCard(),
-                      const SizedBox(height: 20),
-
-                      // Similar Products Card
-                      _buildSimilarProductsCard(),
                       const SizedBox(height: 32),
 
                       // Action Buttons
@@ -333,7 +335,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
   Widget _buildMainProductCard() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -348,10 +350,11 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with scanned image
+          // Header with product image
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product image placeholder
+              // Product image from scan or database
               Container(
                 width: 80,
                 height: 80,
@@ -360,29 +363,19 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFE5E7EB)),
                 ),
-                child:
-                    widget.scannedImagePath != null
-                        ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=200&h=200&fit=crop',
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                        : const Icon(
-                          Icons.image_outlined,
-                          color: Color(0xFF9CA3AF),
-                          size: 32,
-                        ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildProductImage(),
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Product Details',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Nunito',
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -391,9 +384,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    const Text(
                       'Review and edit the information below',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -401,6 +394,45 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                         height: 1.2,
                       ),
                     ),
+
+                    // Auto-detection indicators if any fields were detected
+                    if ((widget.detectedProductName?.isNotEmpty ?? false) ||
+                        (widget.detectedExpiryDate?.isNotEmpty ?? false))
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFF10B981).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome,
+                              size: 14,
+                              color: Color(0xFF10B981),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'AI-detected fields',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF10B981),
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -415,6 +447,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
             controller: _productNameController,
             icon: Icons.shopping_bag_outlined,
             isDetected: widget.detectedProductName?.isNotEmpty ?? false,
+            isRequired: true,
+            validator: _validateProductName,
           ),
           const SizedBox(height: 16),
 
@@ -423,6 +457,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
             controller: _expiryDateController,
             icon: Icons.calendar_today_outlined,
             isDetected: widget.detectedExpiryDate?.isNotEmpty ?? false,
+            isRequired: true,
+            validator: _validateExpiryDate,
             suffix: IconButton(
               icon: const Icon(
                 Icons.edit_calendar,
@@ -452,6 +488,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   ],
                   onChanged:
                       (value) => setState(() => _selectedCategory = value!),
+                  isRequired: true,
                 ),
               ),
               const SizedBox(width: 16),
@@ -460,6 +497,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   label: 'Quantity',
                   controller: _quantityController,
                   icon: Icons.numbers,
+                  isRequired: true,
+                  validator: _validateQuantity,
+                  keyboardType: TextInputType.number,
                 ),
               ),
             ],
@@ -506,6 +546,19 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   }
 
   Widget _buildDetectionResultsCard() {
+    // Determine what was actually detected
+    final bool hasBarcodeDetection =
+        widget.productImageUrl !=
+        null; // If we have a product image URL, it likely means barcode was detected
+    final bool hasOcrTextDetection =
+        widget.detectedExpiryDate?.isNotEmpty ?? false;
+    final bool hasProductName = widget.detectedProductName?.isNotEmpty ?? false;
+
+    // No need to show the card if nothing was detected (for manual entry)
+    if (!hasBarcodeDetection && !hasOcrTextDetection && !hasProductName) {
+      return const SizedBox.shrink(); // Don't show detection card for manual entry
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -537,9 +590,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
+              const Text(
                 'Detection Results',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -551,25 +604,66 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Show the actual detection results with accurate status icons
           _buildDetectionItem(
             'Barcode Detection',
-            'Product identified via barcode scan',
+            hasBarcodeDetection
+                ? 'Product matched via database lookup'
+                : 'No barcode detected or recognized',
             Icons.qr_code_scanner,
-            true,
+            hasBarcodeDetection,
           ),
           const SizedBox(height: 12),
           _buildDetectionItem(
-            'OCR Text Recognition',
-            'Expiry date extracted from label',
+            'Text Recognition',
+            hasOcrTextDetection
+                ? 'Expiry date found: ${widget.detectedExpiryDate}'
+                : 'No expiry date detected on packaging',
             Icons.text_fields,
-            widget.detectedExpiryDate?.isNotEmpty ?? false,
+            hasOcrTextDetection,
           ),
           const SizedBox(height: 12),
           _buildDetectionItem(
-            'Product Database',
-            'Matched with OpenFoodFacts database',
-            Icons.storage,
-            true,
+            'Product Name',
+            hasProductName
+                ? 'Identified: ${widget.detectedProductName}'
+                : 'No product name identified',
+            Icons.text_format,
+            hasProductName,
+          ),
+
+          // Add information about how detection works
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: Color(0xFF6B7280),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Missing information? You can manually enter any details that weren\'t automatically detected.',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF6B7280),
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -633,159 +727,63 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     );
   }
 
-  Widget _buildSimilarProductsCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF97316).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.recommend,
-                  color: Color(0xFFF97316),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Similar Products',
-                style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Similar products list
-          _buildSimilarProductItem('Whole Milk 2L', 'Dairy', '2 days ago'),
-          const SizedBox(height: 12),
-          _buildSimilarProductItem('Organic Milk 1L', 'Dairy', '1 week ago'),
-          const SizedBox(height: 12),
-          _buildSimilarProductItem('Low-fat Milk', 'Dairy', '2 weeks ago'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSimilarProductItem(
-    String name,
-    String category,
-    String timeAdded,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE5E7EB),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              color: Color(0xFF6B7280),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF111827),
-                    height: 1.2,
-                  ),
-                ),
-                Text(
-                  '$category • Added $timeAdded',
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF6B7280),
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {},
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            ),
-            child: Text(
-              'Use',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF3B82F6),
-                height: 1.2,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFormField({
     required String label,
     required TextEditingController controller,
     required IconData icon,
     bool isDetected = false,
+    bool isRequired = false,
     Widget? suffix,
     int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF374151),
-            height: 1.2,
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF374151),
+                height: 1.2,
+              ),
+            ),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFFEF4444),
+                  height: 1.2,
+                ),
+              ),
+            const Spacer(),
+            if (isDetected)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'AI-detected',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF10B981),
+                    height: 1.2,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -796,46 +794,29 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   isDetected
                       ? const Color(0xFF10B981)
                       : const Color(0xFFD1D5DB),
-              width: isDetected ? 2 : 1,
+              width: isDetected ? 1.5 : 1,
             ),
-            color:
-                isDetected
-                    ? const Color(0xFF10B981).withOpacity(0.05)
-                    : Colors.white,
+            color: Colors.white,
           ),
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
+            keyboardType: keyboardType,
+            validator: validator,
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: const Color(0xFF6B7280), size: 20),
-              suffixIcon:
-                  isDetected
-                      ? Container(
-                        margin: const EdgeInsets.all(8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'Auto-detected',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                            height: 1.2,
-                          ),
-                        ),
-                      )
-                      : suffix,
+              suffixIcon: suffix,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
+              ),
+              hintStyle: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFB2B7BE),
+                height: 1.2,
               ),
             ),
             style: const TextStyle(
@@ -857,19 +838,35 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     required IconData icon,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    bool isRequired = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF374151),
-            height: 1.2,
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF374151),
+                height: 1.2,
+              ),
+            ),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFFEF4444),
+                  height: 1.2,
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -906,6 +903,12 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 vertical: 14,
               ),
             ),
+            dropdownColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Color(0xFF6B7280),
+            ),
             isExpanded: true,
           ),
         ),
@@ -938,6 +941,87 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     }
   }
 
+  Future<void> _addToInventory() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Parse form data
+      final productName = _productNameController.text.trim();
+      final expiryDate = _parseExpiryDate(_expiryDateController.text.trim());
+      final quantity = double.parse(_quantityController.text.trim());
+      final notes = _notesController.text.trim();
+
+      // Add to Firestore via InventoryService
+      await _inventoryService.addFoodItem(
+        name: productName,
+        expirationDate: expiryDate,
+        category: _selectedCategory,
+        quantity: quantity,
+        unit: _selectedUnit,
+        storageLocation: _selectedLocation,
+        notes: notes.isNotEmpty ? notes : null,
+        imageUrl:
+            widget.productImageUrl, // Store OpenFoodFacts image URL or null
+        barcode: null, // TODO: Pass barcode if available from scan result
+      );
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text('$productName added to pantry!'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+
+        // Navigate to inventory
+        _navigateToInventory();
+      }
+    } catch (e) {
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Failed to add item: ${e.toString()}')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Widget _buildActionButtons() {
     return Column(
       children: [
@@ -946,51 +1030,47 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                // Add to pantry logic
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Product added to pantry!'),
-                    backgroundColor: const Color(0xFF10B981),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
-                // Navigate directly to inventory without going back to scan screen
-                _navigateToInventory();
-              }
-            },
+            onPressed: _isLoading ? null : _addToInventory,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
               ),
               elevation: 0,
+              disabledBackgroundColor: const Color(0xFF10B981).withOpacity(0.5),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.add_circle_outline,
-                  color: Colors.white,
-                  size: 22,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Add to Pantry',
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.add_circle_outline,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Add to Pantry',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
           ),
         ),
         const SizedBox(height: 12),
@@ -999,14 +1079,15 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: OutlinedButton(
+          child: TextButton(
             onPressed: () {
               Navigator.pop(context);
             },
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFD1D5DB)),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF374151),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Color(0xFFD1D5DB)),
               ),
             ),
             child: Row(
@@ -1034,5 +1115,106 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildProductImage() {
+    // Priority 1: Show OpenFoodFacts product image if available
+    if (widget.productImageUrl != null && widget.productImageUrl!.isNotEmpty) {
+      return Image.network(
+        widget.productImageUrl!,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF10B981),
+              strokeWidth: 2,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          // If OpenFoodFacts image fails to load, show fallback
+          return _buildFallbackImage();
+        },
+      );
+    }
+
+    // Priority 2: Fallback placeholder image
+    return _buildFallbackImage();
+  }
+
+  Widget _buildFallbackImage() {
+    return Container(
+      color: const Color(0xFFF3F4F6),
+      child: const Icon(
+        Icons.inventory_2_outlined,
+        color: Color(0xFF9CA3AF),
+        size: 32,
+      ),
+    );
+  }
+
+  String? _validateProductName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Product name is required';
+    }
+    if (value.trim().length < 2) {
+      return 'Product name must be at least 2 characters';
+    }
+    return null;
+  }
+
+  String? _validateExpiryDate(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Expiry date is required';
+    }
+    // Basic date format validation (MM/DD/YYYY)
+    final dateRegex = RegExp(r'^\d{2}/\d{2}/\d{4}$');
+    if (!dateRegex.hasMatch(value.trim())) {
+      return 'Please use MM/DD/YYYY format';
+    }
+
+    try {
+      final parts = value.trim().split('/');
+      final month = int.parse(parts[0]);
+      final day = int.parse(parts[1]);
+      final year = int.parse(parts[2]);
+
+      final date = DateTime(year, month, day);
+      final now = DateTime.now();
+
+      if (date.isBefore(DateTime(now.year, now.month, now.day))) {
+        return 'Expiry date cannot be in the past';
+      }
+
+      return null;
+    } catch (e) {
+      return 'Please enter a valid date';
+    }
+  }
+
+  String? _validateQuantity(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Quantity is required';
+    }
+
+    final quantity = double.tryParse(value.trim());
+    if (quantity == null) {
+      return 'Please enter a valid number';
+    }
+
+    if (quantity <= 0) {
+      return 'Quantity must be greater than 0';
+    }
+
+    return null;
+  }
+
+  DateTime _parseExpiryDate(String dateString) {
+    final parts = dateString.trim().split('/');
+    final month = int.parse(parts[0]);
+    final day = int.parse(parts[1]);
+    final year = int.parse(parts[2]);
+    return DateTime(year, month, day);
   }
 }

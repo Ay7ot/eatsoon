@@ -66,17 +66,17 @@ class _ScanScreenState extends State<ScanScreen>
   }
 
   void _handleAppPaused() {
-    debugPrint('App paused - disposing camera to prevent conflicts');
-    // Dispose camera completely when app goes to background
-    _disposeCamera();
+    debugPrint('App paused - pausing camera to prevent conflicts');
+    // Just pause instead of disposing to avoid buffer issues
+    _pauseCamera();
   }
 
   void _handleAppResumed() {
-    debugPrint('App resumed - reinitializing camera');
-    // Add delay and reinitialize camera when app comes back to foreground
-    Future.delayed(const Duration(milliseconds: 500), () {
+    debugPrint('App resumed - resuming camera');
+    // Resume instead of reinitializing to prevent buffer conflicts
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (!_isDisposed && mounted) {
-        _reinitializeCamera();
+        _resumeCamera();
       }
     });
   }
@@ -85,14 +85,14 @@ class _ScanScreenState extends State<ScanScreen>
     if (_isDisposed) return;
 
     debugPrint('Initializing camera...');
-    
+
     // Reset failed state when starting initialization
     if (mounted && !_isDisposed) {
       setState(() {
         _cameraInitializationFailed = false;
       });
     }
-    
+
     try {
       // Ensure any existing controller is disposed first
       if (_cameraController != null) {
@@ -104,10 +104,10 @@ class _ScanScreenState extends State<ScanScreen>
       _cameras = await availableCameras();
       if (_cameras != null && _cameras!.isNotEmpty) {
         debugPrint('Found ${_cameras!.length} cameras');
-        
+
         _cameraController = CameraController(
           _cameras![0],
-          ResolutionPreset.medium, // Use medium for better stability
+          ResolutionPreset.low, // Use low resolution to reduce buffer usage
           enableAudio: false,
           imageFormatGroup: ImageFormatGroup.jpeg,
         );
@@ -146,6 +146,10 @@ class _ScanScreenState extends State<ScanScreen>
     if (_cameraController != null) {
       try {
         if (_cameraController!.value.isInitialized) {
+          // Stop preview first to prevent new frames
+          await _cameraController!.pausePreview();
+          // Add delay to ensure all buffers are released
+          await Future.delayed(const Duration(milliseconds: 300));
           await _cameraController!.dispose();
         }
       } catch (e) {
@@ -174,14 +178,14 @@ class _ScanScreenState extends State<ScanScreen>
   Future<void> _resumeCamera() async {
     if (_cameraController != null && _cameraController!.value.isInitialized) {
       try {
-        // Add small delay to prevent buffer conflicts
+        // Small delay to prevent buffer conflicts
         await Future.delayed(const Duration(milliseconds: 100));
         if (!_isDisposed) {
           await _cameraController!.resumePreview();
         }
       } catch (e) {
         debugPrint('Camera resume error: $e');
-        // If resume fails, try reinitializing
+        // Only reinitialize if resume fails
         await _reinitializeCamera();
       }
     } else if (!_isDisposed) {
@@ -198,13 +202,20 @@ class _ScanScreenState extends State<ScanScreen>
   Future<void> _captureAndScan() async {
     if (!_isCameraInitialized || _isScanning || _isDisposed) return;
 
+    // Prevent rapid consecutive scans to avoid buffer buildup
+    if (_isScanning) {
+      debugPrint('Scan already in progress, ignoring request');
+      return;
+    }
+
     setState(() {
       _isScanning = true;
     });
 
+    XFile? imageFile;
     try {
       // Take picture
-      final XFile imageFile = await _cameraController!.takePicture();
+      imageFile = await _cameraController!.takePicture();
       debugPrint('Image captured: ${imageFile.path}');
 
       // Perform ML Kit scanning
@@ -219,6 +230,7 @@ class _ScanScreenState extends State<ScanScreen>
             scannedImagePath: imageFile.path,
             detectedProductName: scanResult.productName,
             detectedExpiryDate: scanResult.detectedExpiryDate,
+            productImageUrl: scanResult.productInfo?.imageUrl,
             scanResult: scanResult,
           );
         } else {
@@ -231,6 +243,18 @@ class _ScanScreenState extends State<ScanScreen>
         _showErrorSnackBar('Failed to scan: $e');
       }
     } finally {
+      // Clean up image file to free memory
+      if (imageFile != null) {
+        try {
+          final file = File(imageFile.path);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (e) {
+          debugPrint('Error cleaning up image file: $e');
+        }
+      }
+
       if (mounted && !_isDisposed) {
         setState(() {
           _isScanning = false;
@@ -261,10 +285,11 @@ class _ScanScreenState extends State<ScanScreen>
     String? scannedImagePath,
     String? detectedProductName,
     String? detectedExpiryDate,
+    String? productImageUrl,
     ScanResult? scanResult,
   }) async {
-    // Pause the camera to save battery and prevent buffer issues
-    await _pauseCamera();
+    // Dispose camera completely to clear image buffer
+    await _disposeCamera();
 
     if (mounted && !_isDisposed) {
       await Navigator.push(
@@ -275,19 +300,20 @@ class _ScanScreenState extends State<ScanScreen>
                 scannedImagePath: scannedImagePath,
                 detectedProductName: detectedProductName ?? '',
                 detectedExpiryDate: detectedExpiryDate ?? '',
+                productImageUrl: productImageUrl,
                 onNavigateToInventory: _navigateToInventory,
               ),
         ),
       );
 
-      // Resume camera when returning from confirmation
-      await _resumeCamera();
+      // Reinitialize camera when returning to ensure fresh preview
+      await _initializeCamera();
     }
   }
 
   Future<void> _handleManualEntry() async {
-    // Pause camera for manual entry too
-    await _pauseCamera();
+    // Dispose camera completely for manual entry too
+    await _disposeCamera();
 
     if (mounted && !_isDisposed) {
       await Navigator.push(
@@ -297,13 +323,14 @@ class _ScanScreenState extends State<ScanScreen>
               (context) => ConfirmationScreen(
                 detectedProductName: '',
                 detectedExpiryDate: '',
+                productImageUrl: null, // No product image for manual entry
                 onNavigateToInventory: _navigateToInventory,
               ),
         ),
       );
 
-      // Resume camera when returning from confirmation
-      await _resumeCamera();
+      // Reinitialize camera when returning from manual entry
+      await _initializeCamera();
     }
   }
 
@@ -325,9 +352,9 @@ class _ScanScreenState extends State<ScanScreen>
 
         // Camera Preview Section
         Expanded(
-          flex: 3,
+          flex: 10,
           child: Container(
-            margin: const EdgeInsets.all(20),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.black,
               borderRadius: BorderRadius.circular(20),
@@ -343,9 +370,14 @@ class _ScanScreenState extends State<ScanScreen>
               borderRadius: BorderRadius.circular(20),
               child: Stack(
                 children: [
-                  // Camera Preview
+                  // Camera Preview - Natural aspect ratio without cropping
                   if (_isCameraInitialized)
-                    Positioned.fill(child: CameraPreview(_cameraController!))
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: _cameraController!.value.aspectRatio,
+                        child: CameraPreview(_cameraController!),
+                      ),
+                    )
                   else if (_cameraInitializationFailed)
                     Center(
                       child: Column(
@@ -474,7 +506,7 @@ class _ScanScreenState extends State<ScanScreen>
 
         // Instructions and Action Section
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -483,14 +515,16 @@ class _ScanScreenState extends State<ScanScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _cameraInitializationFailed 
-                      ? const Color(0xFFFEF2F2) 
-                      : const Color(0xFFEFF6FF),
+                  color:
+                      _cameraInitializationFailed
+                          ? const Color(0xFFFEF2F2)
+                          : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: _cameraInitializationFailed 
-                        ? const Color(0xFFFECACA) 
-                        : const Color(0xFFBFDBFE)
+                    color:
+                        _cameraInitializationFailed
+                            ? const Color(0xFFFECACA)
+                            : const Color(0xFFBFDBFE),
                   ),
                 ),
                 child: Text(
@@ -502,9 +536,10 @@ class _ScanScreenState extends State<ScanScreen>
                     fontFamily: 'Inter',
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    color: _cameraInitializationFailed 
-                        ? const Color(0xFFDC2626) 
-                        : const Color(0xFF1E40AF),
+                    color:
+                        _cameraInitializationFailed
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF1E40AF),
                     height: 1.2,
                   ),
                 ),

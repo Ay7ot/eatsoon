@@ -14,9 +14,10 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Example for another collection (e.g., inventory)
+    // Inventory Collection - Fixed to match actual structure
     // - Users can create, read, update, and delete their own inventory items.
-    match /inventory/{userId}/{itemId} {
+    // - The structure is: inventory/{userId}/items/{itemId}
+    match /inventory/{userId}/items/{itemId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
