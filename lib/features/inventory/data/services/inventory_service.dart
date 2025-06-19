@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:eat_soon/features/home/models/food_item.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
+import 'package:eat_soon/features/notifications/services/notification_service.dart';
 
 class InventoryService {
   static final InventoryService _instance = InventoryService._internal();
@@ -62,6 +63,10 @@ class InventoryService {
       await _activityService.logItemAdded(name, imageUrl);
 
       debugPrint('Food item added successfully with ID: ${docRef.id}');
+
+      // Schedule notifications after adding item
+      await NotificationService().scheduleInventoryNotifications();
+
       return docRef.id;
     } catch (e) {
       debugPrint('Error adding food item: $e');
@@ -240,23 +245,26 @@ class InventoryService {
         throw 'No user is currently signed in.';
       }
 
-      final cutoffDate = DateTime.now().add(Duration(days: days));
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final cutoffDate = today.add(Duration(days: days + 1));
 
       final querySnapshot =
           await _firestore
               .collection('inventory')
               .doc(_currentUserId)
               .collection('items')
-              .where(
-                'expirationDate',
-                isLessThanOrEqualTo: Timestamp.fromDate(cutoffDate),
-              )
-              .orderBy('expirationDate', descending: false)
+              .where('expirationDate', isGreaterThanOrEqualTo: today)
+              .where('expirationDate', isLessThan: cutoffDate)
               .get();
 
-      return querySnapshot.docs
-          .map((doc) => FoodItem.fromFirestore(doc))
-          .toList();
+      final items =
+          querySnapshot.docs.map((doc) => FoodItem.fromFirestore(doc)).toList();
+
+      debugPrint(
+        'Found ${items.length} expiring items (including today and up to $days days).',
+      );
+      return items;
     } catch (e) {
       debugPrint('Error getting expiring items: $e');
       throw 'Failed to get expiring items: $e';

@@ -3,6 +3,10 @@ allprojects {
         google()
         mavenCentral()
     }
+    // Exclude deprecated firebase-iid to avoid duplicate classes with firebase-messaging
+    configurations.all {
+        exclude(group = "com.google.firebase", module = "firebase-iid")
+    }
 }
 
 buildscript {

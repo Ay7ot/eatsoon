@@ -5,7 +5,7 @@ import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
-git add .import 'package:eat_soon/features/home/services/activity_service.dart';
+import 'package:eat_soon/features/home/services/activity_service.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   final String? scannedImagePath;

@@ -5,6 +5,8 @@ import 'package:eat_soon/features/recipes/presentation/screens/recipe_detail_scr
 import 'package:flutter/material.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:shimmer/shimmer.dart';
+import 'dart:async';
+import 'package:eat_soon/features/home/models/food_item.dart';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});
@@ -23,6 +25,9 @@ class _RecipesScreenState extends State<RecipesScreen>
   List<Recipe> _filteredRecipes = [];
   final TextEditingController _searchController = TextEditingController();
   bool _isUsingFallback = false;
+  StreamSubscription? _inventorySubscription;
+  Timer? _debounce;
+  bool _isInitialLoad = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -32,10 +37,26 @@ class _RecipesScreenState extends State<RecipesScreen>
     super.initState();
     _recipeFuture = _fetchRecipes();
     _searchController.addListener(_applySearch);
+    _inventorySubscription = _inventoryService.getFoodItemsStream().listen((_) {
+      if (_isInitialLoad) {
+        _isInitialLoad = false;
+        return;
+      }
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+      _debounce = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          setState(() {
+            _recipeFuture = _fetchRecipes();
+          });
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
+    _inventorySubscription?.cancel();
+    _debounce?.cancel();
     _searchController.removeListener(_applySearch);
     _searchController.dispose();
     super.dispose();
@@ -103,7 +124,7 @@ class _RecipesScreenState extends State<RecipesScreen>
 
   void _applySearch() {
     final query = _searchController.text.toLowerCase();
-      setState(() {
+    setState(() {
       _filteredRecipes =
           _allRecipes
               .where((r) => r.title.toLowerCase().contains(query))
@@ -119,7 +140,7 @@ class _RecipesScreenState extends State<RecipesScreen>
       appBar: const CustomAppBar(title: 'Eatsoon'),
       body: Column(
         children: [
-                  _buildSearchBar(),
+          _buildSearchBar(),
           if (_isUsingFallback) _buildFallbackNotice(),
           Expanded(
             child: FutureBuilder<List<Recipe>>(
@@ -138,7 +159,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                 }
 
                 return ListView.builder(
-      padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   itemCount: _filteredRecipes.length,
                   itemBuilder: (context, index) {
                     final recipe = _filteredRecipes[index];
@@ -157,17 +178,17 @@ class _RecipesScreenState extends State<RecipesScreen>
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.4),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-      ),
-      child: TextField(
-        controller: _searchController,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14.4),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        ),
+        child: TextField(
+          controller: _searchController,
           decoration: const InputDecoration(
-          hintText: 'Search recipes...',
+            hintText: 'Search recipes...',
             prefixIcon: Icon(Icons.search),
-          border: InputBorder.none,
+            border: InputBorder.none,
             contentPadding: EdgeInsets.all(16),
           ),
         ),
@@ -176,12 +197,12 @@ class _RecipesScreenState extends State<RecipesScreen>
   }
 
   Widget _buildFallbackNotice() {
-          return Container(
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                decoration: BoxDecoration(
+      decoration: BoxDecoration(
         color: const Color(0xFFE0F2FE),
-                  borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF7DD3FC)),
       ),
       child: const Row(
@@ -189,14 +210,14 @@ class _RecipesScreenState extends State<RecipesScreen>
           Icon(Icons.info_outline, color: Color(0xFF0C4A6E)),
           SizedBox(width: 12),
           Expanded(
-                child: Text(
+            child: Text(
               'No expiring items found. Showing some easy recipe ideas to get you started!',
-                  style: TextStyle(
+              style: TextStyle(
                 color: Color(0xFF0C4A6E),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
         ],
       ),
     );
@@ -227,9 +248,9 @@ class _RecipesScreenState extends State<RecipesScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [_buildCardImage(recipe), _buildCardDetails(recipe)],
         ),
-        ),
-      );
-    }
+      ),
+    );
+  }
 
   Widget _buildCardImage(Recipe recipe) {
     return ClipRRect(
@@ -238,16 +259,16 @@ class _RecipesScreenState extends State<RecipesScreen>
         children: [
           Image.network(
             recipe.imageUrl,
-                height: 200,
-                width: double.infinity,
-                    fit: BoxFit.cover,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
             errorBuilder:
                 (_, __, ___) => Container(
                   height: 200,
                   color: Colors.grey.shade300,
                   child: const Icon(
                     Icons.restaurant_menu,
-                            color: Colors.grey,
+                    color: Colors.grey,
                     size: 50,
                   ),
                 ),
@@ -264,30 +285,30 @@ class _RecipesScreenState extends State<RecipesScreen>
             ),
           ),
           // Category Tag
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: recipe.categoryColor,
+              decoration: BoxDecoration(
+                color: recipe.categoryColor,
                 borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
+              ),
+              child: Text(
                 recipe.category.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
               ),
+            ),
+          ),
           // Title
-              Positioned(
+          Positioned(
             bottom: 12,
             left: 12,
-                right: 12,
+            right: 12,
             child: Text(
               recipe.title,
               style: const TextStyle(
@@ -298,34 +319,34 @@ class _RecipesScreenState extends State<RecipesScreen>
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+            ),
           ),
+        ],
+      ),
     );
   }
 
   Widget _buildCardDetails(Recipe recipe) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  recipe.description,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            recipe.description,
             style: TextStyle(
               color: Colors.grey.shade600,
-                    fontSize: 14,
+              fontSize: 14,
               height: 1.4,
-                  ),
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-                ),
+          ),
           const SizedBox(height: 16),
           // Stats Row
-                Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+            children: [
               _buildStatItem(
                 Icons.timer_outlined,
                 recipe.cookTime,
@@ -338,14 +359,14 @@ class _RecipesScreenState extends State<RecipesScreen>
               ),
               _buildStatItem(
                 Icons.star_border_rounded,
-                      recipe.difficulty,
+                recipe.difficulty,
                 'Difficulty',
-                    ),
-                  ],
-                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
-                Row(
-                  children: [
+          Row(
+            children: [
               if (!_isUsingFallback && recipe.usedIngredientCount > 0)
                 _buildIngredientChip(
                   '${recipe.usedIngredientCount} Used',
@@ -361,32 +382,32 @@ class _RecipesScreenState extends State<RecipesScreen>
               const Spacer(),
               ElevatedButton(
                 onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
                       builder: (context) => RecipeDetailScreen(recipe: recipe),
-                          ),
-                        );
-                      },
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: recipe.categoryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                        padding: const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
-                        ),
-                        ),
-                        child: const Text(
-                          'View Recipe',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ],
-            ),
+                child: const Text(
+                  'View Recipe',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -438,11 +459,11 @@ class _RecipesScreenState extends State<RecipesScreen>
             (_, __) => Container(
               margin: const EdgeInsets.only(bottom: 16),
               height: 250,
-      decoration: BoxDecoration(
-        color: Colors.white,
+              decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+              ),
+            ),
       ),
     );
   }

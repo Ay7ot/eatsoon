@@ -40,7 +40,7 @@ dependencies:
   firebase_auth: ^4.20.0
   cloud_firestore: ^4.17.5
   firebase_storage: ^11.6.5
-  firebase_messaging: ^14.7.10
+  firebase_messaging: ^14.9.4
   firebase_analytics: ^10.10.7
 
   # App Check
@@ -96,6 +96,10 @@ dependencies:
 
   # New dependency
   flutter_dotenv: ^5.1.0
+
+  # Add these new dependencies for notifications
+  workmanager: ^0.6.0
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eat_soon/features/auth/data/services/auth_service.dart';
 import 'package:eat_soon/features/auth/data/models/user_model.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
+import 'package:eat_soon/features/notifications/services/notification_service.dart';
 
 enum AuthStatus { authenticated, unauthenticated, loading }
 
@@ -50,6 +51,9 @@ class AuthProvider extends ChangeNotifier {
 
       // Cleanup old activities when user signs in
       _cleanupOldActivities();
+
+      // Schedule expiration notifications on app start after authentication
+      NotificationService().scheduleInventoryNotifications();
     } else {
       _user = null;
       _status = AuthStatus.unauthenticated;

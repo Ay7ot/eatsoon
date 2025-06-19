@@ -10,6 +10,8 @@ import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/splash/splash_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:eat_soon/features/notifications/services/notification_service.dart';
+import 'package:eat_soon/features/notifications/services/background_service.dart';
 
 // Import your app components (these will be created later)
 // import 'core/router/app_router.dart';
@@ -24,6 +26,10 @@ Future<void> main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize notification services
+  await NotificationService().initialize();
+  await BackgroundService.initialize();
 
   // Activate App Check with a more robust provider selection
   try {
