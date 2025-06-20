@@ -7,6 +7,7 @@ import 'package:eat_soon/features/profile/presentation/screens/edit_profile_scre
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:eat_soon/features/home/models/activity_model.dart';
+import 'package:eat_soon/features/notifications/presentation/screens/notifications_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -232,7 +233,7 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                '4 available',
+                '3 available',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w500,
@@ -272,10 +273,10 @@ class ProfileScreen extends StatelessWidget {
                 Icons.notifications_none_rounded,
                 const Color(0xFF10B981),
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Notifications coming soon!'),
-                      backgroundColor: Color(0xFF10B981),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen(),
                     ),
                   );
                 },
@@ -284,37 +285,21 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildSecondaryActionButton(
-                'Statistics',
-                'View insights',
-                Icons.analytics_outlined,
-                const Color(0xFF8B5CF6),
+                'Help & Support',
+                'Get assistance',
+                Icons.help_outline_rounded,
+                const Color(0xFFF59E0B),
                 () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Statistics coming soon!'),
-                      backgroundColor: Color(0xFF8B5CF6),
+                      content: Text('Help & Support coming soon!'),
+                      backgroundColor: Color(0xFFF59E0B),
                     ),
                   );
                 },
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        // Help & Support (Full Width)
-        _buildSupportActionButton(
-          context,
-          'Help & Support',
-          'Get assistance and find answers to your questions',
-          Icons.help_outline_rounded,
-          () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Help & Support coming soon!'),
-                backgroundColor: Color(0xFFF59E0B),
-              ),
-            );
-          },
         ),
       ],
     );
@@ -478,90 +463,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSupportActionButton(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.help_outline_rounded,
-                  color: Color(0xFFF59E0B),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: Color(0xFF111827),
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        color: Color(0xFF6B7280),
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: const Color(0xFFF59E0B).withOpacity(0.6),
-                size: 14,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildRecentActivitySection() {
+    final ActivityService activityService = ActivityService();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -576,137 +480,238 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildActivityItem(
-                'Added Organic Milk to pantry',
-                '2 hours ago',
-                const Color(0xFF10B981),
-                'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=400&fit=crop',
-              ),
-              const SizedBox(height: 16),
-              _buildActivityItem(
-                'Used Banana Bread recipe',
-                '5 hours ago',
-                const Color(0xFF3B82F6),
-                'https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=400&h=400&fit=crop',
-              ),
-            ],
-          ),
+        StreamBuilder<List<ActivityModel>>(
+          stream: activityService.getActivitiesStream(limit: 5),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _buildActivityLoadingState();
+            }
+
+            if (snapshot.hasError) {
+              return _buildActivityErrorState();
+            }
+
+            final activities = snapshot.data ?? [];
+
+            if (activities.isEmpty) {
+              return _buildNoActivityState();
+            }
+
+            return Column(
+              children:
+                  activities
+                      .map(
+                        (a) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _buildActivityItemFromModel(a),
+                        ),
+                      )
+                      .toList(),
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildActivityItem(
-    String title,
-    String time,
-    Color dotColor,
-    String imageUrl,
-  ) {
-    return Row(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+  Widget _buildActivityLoadingState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(27),
-            child: Image.network(
-              imageUrl,
-              width: 56,
-              height: 56,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  width: 56,
-                  height: 56,
-                  color: const Color(0xFFF8FAFC),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF10B981),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 56,
-                  height: 56,
-                  color: const Color(0xFFF8FAFC),
-                  child: const Icon(
-                    Icons.image_outlined,
-                    color: Color(0xFF94A3B8),
-                    size: 20,
-                  ),
-                );
-              },
+        ],
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF10B981),
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityErrorState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.error_outline, size: 32, color: Color(0xFFEF4444)),
+          SizedBox(height: 8),
+          Text(
+            'Error loading activity',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: Color(0xFF6B7280),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  color: Color(0xFF111827),
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                time,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                  height: 1.2,
-                ),
-              ),
-            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoActivityState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
           ),
-        ),
-        const SizedBox(width: 12),
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: dotColor,
-            borderRadius: BorderRadius.circular(4),
+        ],
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.history, size: 32, color: Color(0xFF9CA3AF)),
+          SizedBox(height: 12),
+          Text(
+            'No recent activity',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
+              color: Color(0xFF6B7280),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItemFromModel(ActivityModel activity) {
+    final Color activityColor = Color(activity.colorValue);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(9.6),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8.6),
+              child: _buildActivityImage(
+                activity.imageUrl,
+                activity.iconPath,
+                activityColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity.title,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    color: Color(0xFF111827),
+                    height: 1.2,
+                  ),
+                ),
+                if (activity.subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    activity.subtitle,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            activity.timeAgo,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w400,
+              fontSize: 12,
+              color: Color(0xFF9CA3AF),
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityImage(String? imageUrl, String iconPath, Color color) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildActivityIcon(iconPath, color),
+      );
+    }
+    return _buildActivityIcon(iconPath, color);
+  }
+
+  Widget _buildActivityIcon(String iconPath, Color color) {
+    return Container(
+      width: 56,
+      height: 56,
+      color: color.withOpacity(0.1),
+      child: Center(
+        child: SvgPicture.asset(
+          iconPath,
+          width: 24,
+          height: 24,
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
         ),
-      ],
+      ),
     );
   }
 

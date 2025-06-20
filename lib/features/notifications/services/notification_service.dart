@@ -1,9 +1,10 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eat_soon/features/notifications/data/models/alert_model.dart';
+import 'package:eat_soon/features/notifications/data/services/alert_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:eat_soon/features/home/models/food_item.dart';
 import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
 
@@ -12,9 +13,11 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
   final InventoryService _inventoryService = InventoryService();
-  
+  final AlertService _alertService = AlertService();
+
   bool _isInitialized = false;
   static const int _expiringTodayId = 1000;
   static const int _expiringInTwoDaysId = 2000;
@@ -23,10 +26,11 @@ class NotificationService {
     if (_isInitialized) return;
 
     try {
-      tz.initializeTimeZones();
       await _requestPermissions();
 
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       const iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
@@ -56,34 +60,36 @@ class NotificationService {
       }
     } else if (Platform.isIOS) {
       await _notifications
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     }
   }
 
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('Notification tapped: ${response.payload}');
-    // Handle navigation to inventory screen
+    // TODO: Handle navigation to a specific screen if needed
   }
 
-  /// Main method to schedule all notifications
+  /// Main method to reconcile all notifications based on current inventory.
   Future<void> scheduleInventoryNotifications() async {
     if (!_isInitialized) await initialize();
 
     try {
-      await _notifications.cancelAll();
       final items = await _inventoryService.getFoodItemsStream().first;
-      await _scheduleExpirationNotifications(items);
-      debugPrint('Scheduled notifications for ${items.length} items');
+      await _reconcileNotifications(items);
+      debugPrint('Reconciled notifications for ${items.length} items');
     } catch (e) {
+      // Catch potential auth error if user is signed out during background fetch
       debugPrint('Error scheduling notifications: $e');
     }
   }
 
-  Future<void> _scheduleExpirationNotifications(List<FoodItem> items) async {
+  Future<void> _reconcileNotifications(List<FoodItem> items) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     final expiringToday = <FoodItem>[];
     final expiringInTwoDays = <FoodItem>[];
 
@@ -93,9 +99,7 @@ class NotificationService {
         item.expirationDate.month,
         item.expirationDate.day,
       );
-      
       final daysUntilExpiration = expirationDay.difference(today).inDays;
-      
       if (daysUntilExpiration == 0) {
         expiringToday.add(item);
       } else if (daysUntilExpiration == 2) {
@@ -103,27 +107,37 @@ class NotificationService {
       }
     }
 
-    // Schedule immediate notifications
-    if (expiringToday.isNotEmpty) {
-      await _showNotification(
-        id: _expiringTodayId,
-        title: 'Items Expiring Today! 🚨',
-        body: _buildNotificationBody(expiringToday, 'expire today'),
-        isUrgent: true,
-      );
+    final requiredIds = <int>{};
+    if (expiringToday.isNotEmpty) requiredIds.add(_expiringTodayId);
+    if (expiringInTwoDays.isNotEmpty) requiredIds.add(_expiringInTwoDaysId);
+
+    final visibleAlerts = await _alertService.getVisibleAlerts();
+    final visibleIds = visibleAlerts.map((a) => a.notificationId).toSet();
+
+    // Add new notifications that should be visible but aren't
+    for (final id in requiredIds.difference(visibleIds)) {
+      if (id == _expiringTodayId) {
+        await _showNotification(
+          id: _expiringTodayId,
+          title: 'Items Expiring Today! 🚨',
+          body: _buildNotificationBody(expiringToday, 'expire today'),
+          isUrgent: true,
+        );
+      } else if (id == _expiringInTwoDaysId) {
+        await _showNotification(
+          id: _expiringInTwoDaysId,
+          title: 'Items Expiring Soon! ⏰',
+          body: _buildNotificationBody(expiringInTwoDays, 'expire in 2 days'),
+          isUrgent: false,
+        );
+      }
     }
 
-    if (expiringInTwoDays.isNotEmpty) {
-      await _showNotification(
-        id: _expiringInTwoDaysId,
-        title: 'Items Expiring Soon! ⏰',
-        body: _buildNotificationBody(expiringInTwoDays, 'expire in 2 days'),
-        isUrgent: false,
-      );
+    // Remove obsolete notifications that are visible but shouldn't be
+    for (final id in visibleIds.difference(requiredIds)) {
+      await _notifications.cancel(id);
+      await _alertService.hideAlert(id);
     }
-
-    // Schedule daily check at 9 AM
-    await _scheduleDailyCheck();
   }
 
   String _buildNotificationBody(List<FoodItem> items, String timeframe) {
@@ -143,6 +157,7 @@ class NotificationService {
     required String body,
     required bool isUrgent,
   }) async {
+    // Show notification on device
     await _notifications.show(
       id,
       title,
@@ -166,54 +181,23 @@ class NotificationService {
       ),
       payload: isUrgent ? 'expiring_today' : 'expiring_in_two_days',
     );
-  }
 
-  Future<void> _scheduleDailyCheck() async {
-    final now = DateTime.now();
-    var scheduledDate = DateTime(now.year, now.month, now.day, 9); // 9 AM
-    
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-
-    await _notifications.zonedSchedule(
-      999, // Daily check ID
-      'Daily Check',
-      'Checking for expiring items',
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_check_channel',
-          'Daily Check',
-          importance: Importance.low,
-          priority: Priority.low,
-          showWhen: false,
-          playSound: false,
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: false,
-          presentBadge: false,
-          presentSound: false,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    // Save alert to Firestore for persistent history
+    final alert = AlertModel(
+      id: id.toString(),
+      notificationId: id,
+      title: title,
+      body: body,
+      payload: isUrgent ? 'expiring_today' : 'expiring_in_two_days',
+      timestamp: Timestamp.now(),
+      visible: true,
+      read: false,
     );
+    await _alertService.saveAlert(alert);
   }
 
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
-  }
-
-  Future<bool> areNotificationsEnabled() async {
-    if (Platform.isAndroid) {
-      return await Permission.notification.isGranted;
-    } else if (Platform.isIOS) {
-      final plugin = _notifications
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
-      final settings = await plugin?.checkPermissions();
-      return settings?.isEnabled ?? false;
-    }
-    return false;
+    await _alertService.hideAllAlerts();
   }
 }

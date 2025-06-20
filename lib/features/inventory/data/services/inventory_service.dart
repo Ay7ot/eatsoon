@@ -188,6 +188,9 @@ class InventoryService {
       await _activityService.logItemUpdated(activityName, activityImageUrl);
 
       debugPrint('Food item updated successfully');
+
+      // Reschedule notifications after updating item
+      await NotificationService().scheduleInventoryNotifications();
     } catch (e) {
       debugPrint('Error updating food item: $e');
       throw 'Failed to update food item: $e';
@@ -232,6 +235,9 @@ class InventoryService {
       await _activityService.logItemDeleted(itemName, imageUrl);
 
       debugPrint('Food item deleted successfully');
+
+      // Reschedule notifications after deleting item
+      await NotificationService().scheduleInventoryNotifications();
     } catch (e) {
       debugPrint('Error deleting food item: $e');
       throw 'Failed to delete food item: $e';
