@@ -39,20 +39,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  void _toggleFavorite() {
-    setState(() {
-      isFavorite = !isFavorite;
-    });
-
-    // Log favorite activity
-    if (isFavorite) {
-      _activityService.logRecipeFavorited(
-        widget.recipe.title,
-        widget.recipe.imageUrl,
-      );
-    }
-  }
-
   void _adjustServings(int change) {
     setState(() {
       selectedServings = (selectedServings + change).clamp(1, 12);

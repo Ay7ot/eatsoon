@@ -35,7 +35,9 @@ class FamilyService {
         statistics: const FamilyStatistics(memberCount: 1),
       );
 
-      final familyDoc = await _firestore.collection('families').add(familyData.toFirestore());
+      final familyDoc = await _firestore
+          .collection('families')
+          .add(familyData.toFirestore());
       final familyId = familyDoc.id;
 
       // Add creator as admin member
@@ -50,7 +52,11 @@ class FamilyService {
       );
 
       // Update user's family association
-      await _updateUserFamilyAssociation(_currentUserId!, familyId, setAsCurrent: true);
+      await _updateUserFamilyAssociation(
+        _currentUserId!,
+        familyId,
+        setAsCurrent: true,
+      );
 
       debugPrint('Family created successfully with ID: $familyId');
       return familyId;
@@ -86,18 +92,21 @@ class FamilyService {
   // Get family members
   Future<List<FamilyMemberModel>> getFamilyMembers(String familyId) async {
     try {
-      final doc = await _firestore.collection('familyMembers').doc(familyId).get();
+      final doc =
+          await _firestore.collection('familyMembers').doc(familyId).get();
       if (!doc.exists) return [];
 
       final data = doc.data() as Map<String, dynamic>;
       final members = data['members'] as Map<String, dynamic>? ?? {};
 
       return members.entries
-          .map((entry) => FamilyMemberModel.fromFirestore(
-                entry.value as Map<String, dynamic>,
-                entry.key,
-                familyId,
-              ))
+          .map(
+            (entry) => FamilyMemberModel.fromFirestore(
+              entry.value as Map<String, dynamic>,
+              entry.key,
+              familyId,
+            ),
+          )
           .toList();
     } catch (e) {
       debugPrint('Error getting family members: $e');
@@ -107,24 +116,24 @@ class FamilyService {
 
   // Get family members stream
   Stream<List<FamilyMemberModel>> getFamilyMembersStream(String familyId) {
-    return _firestore
-        .collection('familyMembers')
-        .doc(familyId)
-        .snapshots()
-        .map((doc) {
-      if (!doc.exists) return <FamilyMemberModel>[];
+    return _firestore.collection('familyMembers').doc(familyId).snapshots().map(
+      (doc) {
+        if (!doc.exists) return <FamilyMemberModel>[];
 
-      final data = doc.data() as Map<String, dynamic>;
-      final members = data['members'] as Map<String, dynamic>? ?? {};
+        final data = doc.data() as Map<String, dynamic>;
+        final members = data['members'] as Map<String, dynamic>? ?? {};
 
-      return members.entries
-          .map((entry) => FamilyMemberModel.fromFirestore(
+        return members.entries
+            .map(
+              (entry) => FamilyMemberModel.fromFirestore(
                 entry.value as Map<String, dynamic>,
                 entry.key,
                 familyId,
-              ))
-          .toList();
-    });
+              ),
+            )
+            .toList();
+      },
+    );
   }
 
   // Invite member to family
@@ -149,7 +158,9 @@ class FamilyService {
       }
 
       // Check if email is already a member
-      final existingMember = members.where((member) => member.email.toLowerCase() == email.toLowerCase());
+      final existingMember = members.where(
+        (member) => member.email.toLowerCase() == email.toLowerCase(),
+      );
       if (existingMember.isNotEmpty) {
         throw 'This email is already a member of the family.';
       }
@@ -176,7 +187,9 @@ class FamilyService {
         expiresAt: now.add(const Duration(days: 7)),
       );
 
-      final invitationDoc = await _firestore.collection('familyInvitations').add(invitation.toFirestore());
+      final invitationDoc = await _firestore
+          .collection('familyInvitations')
+          .add(invitation.toFirestore());
 
       debugPrint('Invitation sent successfully with ID: ${invitationDoc.id}');
       return invitationDoc.id;
@@ -197,7 +210,11 @@ class FamilyService {
       final userEmail = user.email?.toLowerCase() ?? '';
 
       // Get invitation
-      final invitationDoc = await _firestore.collection('familyInvitations').doc(invitationId).get();
+      final invitationDoc =
+          await _firestore
+              .collection('familyInvitations')
+              .doc(invitationId)
+              .get();
       if (!invitationDoc.exists) {
         throw 'Invitation not found.';
       }
@@ -226,13 +243,20 @@ class FamilyService {
       );
 
       // Update user's family association
-      await _updateUserFamilyAssociation(_currentUserId!, invitation.familyId, setAsCurrent: true);
+      await _updateUserFamilyAssociation(
+        _currentUserId!,
+        invitation.familyId,
+        setAsCurrent: true,
+      );
 
       // Update invitation status
-      await _firestore.collection('familyInvitations').doc(invitationId).update({
-        'status': InvitationStatus.accepted.name,
-        'respondedAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection('familyInvitations')
+          .doc(invitationId)
+          .update({
+            'status': InvitationStatus.accepted.name,
+            'respondedAt': FieldValue.serverTimestamp(),
+          });
 
       // Update family member count
       await _updateFamilyMemberCount(invitation.familyId);
@@ -328,28 +352,6 @@ class FamilyService {
     }
   }
 
-  // Get pending invitations for current user
-  Stream<List<FamilyInvitationModel>> getPendingInvitationsStream() {
-    if (_currentUserId == null) {
-      return Stream.value([]);
-    }
-
-    final userEmail = _auth.currentUser?.email?.toLowerCase() ?? '';
-    if (userEmail.isEmpty) {
-      return Stream.value([]);
-    }
-
-    return _firestore
-        .collection('familyInvitations')
-        .where('inviteeEmail', isEqualTo: userEmail)
-        .where('status', isEqualTo: InvitationStatus.pending.name)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => FamilyInvitationModel.fromFirestore(doc))
-            .where((invitation) => !invitation.isExpired)
-            .toList());
-  }
-
   // Helper methods
   Future<void> _addMemberToFamily({
     required String familyId,
@@ -377,9 +379,13 @@ class FamilyService {
     }, SetOptions(merge: true));
   }
 
-  Future<void> _updateUserFamilyAssociation(String userId, String familyId, {bool setAsCurrent = false}) async {
+  Future<void> _updateUserFamilyAssociation(
+    String userId,
+    String familyId, {
+    bool setAsCurrent = false,
+  }) async {
     final userDoc = _firestore.collection('users').doc(userId);
-    
+
     if (setAsCurrent) {
       await userDoc.update({
         'currentFamilyId': familyId,
@@ -394,7 +400,7 @@ class FamilyService {
 
   Future<void> _removeFamilyFromUser(String userId, String familyId) async {
     final userDoc = _firestore.collection('users').doc(userId);
-    
+
     await userDoc.update({
       'familyIds': FieldValue.arrayRemove([familyId]),
     });
@@ -415,4 +421,19 @@ class FamilyService {
       'statistics.memberCount': members.length,
     });
   }
-} 
+
+  Stream<List<FamilyInvitationModel>> getPendingInvitationsStream(
+    String familyId,
+  ) {
+    return _firestore
+        .collection('familyInvitations')
+        .where('familyId', isEqualTo: familyId)
+        .where('status', isEqualTo: InvitationStatus.pending.name)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => FamilyInvitationModel.fromFirestore(doc))
+              .toList();
+        });
+  }
+}

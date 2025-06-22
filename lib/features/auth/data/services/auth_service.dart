@@ -173,6 +173,17 @@ class AuthService {
     }
   }
 
+  // Get user data from Firestore
+  Future<Map<String, dynamic>?> getUserData(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      return doc.data();
+    } catch (e) {
+      debugPrint('Error getting user data: $e');
+      return null;
+    }
+  }
+
   // Save user data to Firestore
   Future<void> _saveUserToFirestore(User user, String name) async {
     await _firestore.collection('users').doc(user.uid).set({

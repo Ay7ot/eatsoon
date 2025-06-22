@@ -5,6 +5,7 @@ class UserModel {
   final String name;
   final String email;
   final String? photoURL;
+  final String? familyId;
   final DateTime? createdAt;
   final DateTime? lastLoginAt;
 
@@ -13,6 +14,7 @@ class UserModel {
     required this.name,
     required this.email,
     this.photoURL,
+    this.familyId,
     this.createdAt,
     this.lastLoginAt,
   });
@@ -23,12 +25,14 @@ class UserModel {
     required String name,
     required String email,
     String? photoURL,
+    String? familyId,
   }) {
     return UserModel(
       uid: uid,
       name: name,
       email: email,
       photoURL: photoURL,
+      familyId: familyId,
       createdAt: DateTime.now(),
       lastLoginAt: DateTime.now(),
     );
@@ -42,6 +46,7 @@ class UserModel {
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       photoURL: data['photoURL'],
+      familyId: data['familyId'],
       createdAt: data['createdAt']?.toDate(),
       lastLoginAt: data['lastLoginAt']?.toDate(),
     );
@@ -54,6 +59,7 @@ class UserModel {
       'name': name,
       'email': email,
       'photoURL': photoURL,
+      'familyId': familyId,
       'createdAt':
           createdAt != null
               ? Timestamp.fromDate(createdAt!)
@@ -71,6 +77,7 @@ class UserModel {
     String? name,
     String? email,
     String? photoURL,
+    String? familyId,
     DateTime? createdAt,
     DateTime? lastLoginAt,
   }) {
@@ -79,6 +86,7 @@ class UserModel {
       name: name ?? this.name,
       email: email ?? this.email,
       photoURL: photoURL ?? this.photoURL,
+      familyId: familyId ?? this.familyId,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
     );
@@ -86,6 +94,6 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, name: $name, email: $email, photoURL: $photoURL)';
+    return 'UserModel(uid: $uid, name: $name, email: $email, photoURL: $photoURL, familyId: $familyId)';
   }
 }

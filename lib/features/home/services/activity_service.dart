@@ -14,6 +14,33 @@ class ActivityService {
   // Get current user ID
   String? get _currentUserId => _auth.currentUser?.uid;
 
+  // Cache of the current user's family id (fetched lazily)
+  String? _cachedFamilyId;
+
+  Future<String?> _getCurrentFamilyId() async {
+    if (_cachedFamilyId != null) return _cachedFamilyId;
+
+    if (_currentUserId == null) return null;
+
+    try {
+      final doc =
+          await _firestore.collection('users').doc(_currentUserId).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data() as Map<String, dynamic>;
+      _cachedFamilyId =
+          data['currentFamilyId'] ??
+          data['familyId'] ??
+          (data['familyIds'] is List && (data['familyIds'] as List).isNotEmpty
+              ? (data['familyIds'] as List).first
+              : null);
+      return _cachedFamilyId;
+    } catch (e) {
+      debugPrint('Error fetching familyId: $e');
+      return null;
+    }
+  }
+
   // Log a new activity
   Future<void> logActivity({
     required ActivityType type,
@@ -38,11 +65,27 @@ class ActivityService {
         metadata: metadata ?? {},
       );
 
+      // Write to the user's activities collection
       await _firestore
           .collection('users')
           .doc(_currentUserId)
           .collection('activities')
           .add(activity.toFirestore());
+
+      // Also write to family's activities if exists
+      final familyId = await _getCurrentFamilyId();
+      if (familyId != null) {
+        final enriched =
+            activity.toFirestore()..addAll({
+              'userId': _currentUserId,
+              'userName': _auth.currentUser?.displayName ?? '',
+            });
+        await _firestore
+            .collection('families')
+            .doc(familyId)
+            .collection('activities')
+            .add(enriched);
+      }
 
       debugPrint('Activity logged: $title');
     } catch (e) {
@@ -204,5 +247,20 @@ class ActivityService {
       subtitle: '$itemCount items removed',
       metadata: {'itemCount': itemCount},
     );
+  }
+
+  // Stream of activities for a given family
+  Stream<List<ActivityModel>> getFamilyActivitiesStream(
+    String familyId, {
+    int limit = 10,
+  }) {
+    return _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('activities')
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((q) => q.docs.map((d) => ActivityModel.fromFirestore(d)).toList());
   }
 }

@@ -6,6 +6,11 @@ import 'package:eat_soon/features/inventory/data/services/inventory_service.dart
 import 'package:eat_soon/features/home/models/food_item.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:eat_soon/features/home/models/activity_model.dart';
+import 'package:eat_soon/features/family/presentation/screens/family_members_screen.dart';
+import 'package:eat_soon/features/family/data/services/family_service.dart';
+import 'package:eat_soon/features/family/data/models/family_member_model.dart';
+import 'package:eat_soon/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final InventoryService _inventoryService = InventoryService();
   final ActivityService _activityService = ActivityService();
+  final FamilyService _familyService = FamilyService();
   late final Stream<List<FoodItem>> _itemsStream;
 
   @override
@@ -686,6 +692,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFamilyMembers() {
+    final familyId = context.watch<AuthProvider>().user?.familyId;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -702,108 +710,478 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 1.3,
               ),
             ),
-            TextButton(
-              onPressed: () {},
-              child: const Text(
-                'Add',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Color(0xFF10B981),
-                  height: 1.2,
+            if (familyId != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withOpacity(0.2),
+                  ),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FamilyMembersScreen(),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'View All',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          color: Color(0xFF10B981),
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: Color(0xFF10B981),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            _buildFamilyMember(
-              'You',
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
+        if (familyId == null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            _buildFamilyMember(
-              'Sarah',
-              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face',
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: const Icon(
+                    Icons.groups_outlined,
+                    color: Color(0xFF9CA3AF),
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'No Family Connected',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Create or join a family to share your pantry',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FamilyMembersScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Get Started',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            _buildFamilyMember(
-              'Mike',
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ],
-        ),
+            child: StreamBuilder<List<FamilyMemberModel>>(
+              stream: _familyService.getFamilyMembersStream(familyId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 80,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Container(
+                    height: 80,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Color(0xFFEF4444),
+                          size: 24,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Error loading members',
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final members = snapshot.data ?? [];
+
+                if (members.isEmpty) {
+                  return Container(
+                    height: 80,
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'No family members found',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Family stats row
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.groups,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${members.length} Family Members',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF111827),
+                                  ),
+                                ),
+                                const Text(
+                                  'Sharing pantry together',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Active',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Members grid
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children:
+                          members.take(6).map((member) {
+                            return _buildEnhancedFamilyMember(member);
+                          }).toList(),
+                    ),
+
+                    if (members.length > 6) ...[
+                      const SizedBox(height: 12),
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const FamilyMembersScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            '+${members.length - 6} more members',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildFamilyMember(String name, String imageUrl) {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(27),
-            child: Image.network(
-              imageUrl,
-              width: 56,
-              height: 56,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  width: 56,
-                  height: 56,
-                  color: const Color(0xFFF8FAFC),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF10B981),
-                        ),
-                      ),
+  Widget _buildEnhancedFamilyMember(FamilyMemberModel member) {
+    return Container(
+      width: 80,
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color:
+                        member.role == FamilyMemberRole.admin
+                            ? const Color(0xFFEF4444)
+                            : const Color(0xFF10B981),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (member.role == FamilyMemberRole.admin
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF10B981))
+                          .withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child:
+                      member.profileImage != null &&
+                              member.profileImage!.isNotEmpty
+                          ? Image.network(
+                            member.profileImage!,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 52,
+                                height: 52,
+                                color: const Color(0xFFF8FAFC),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 52,
+                                height: 52,
+                                color: const Color(0xFFF8FAFC),
+                                child: const Icon(
+                                  Icons.person_outline,
+                                  color: Color(0xFF6B7280),
+                                  size: 24,
+                                ),
+                              );
+                            },
+                          )
+                          : Container(
+                            width: 52,
+                            height: 52,
+                            color: const Color(0xFFF8FAFC),
+                            child: const Icon(
+                              Icons.person_outline,
+                              color: Color(0xFF6B7280),
+                              size: 24,
+                            ),
+                          ),
+                ),
+              ),
+              // Role indicator
+              if (member.role == FamilyMemberRole.admin)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.star,
+                      color: Colors.white,
+                      size: 10,
                     ),
                   ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 56,
-                  height: 56,
-                  color: const Color(0xFFF8FAFC),
-                  child: const Icon(
-                    Icons.person_outline,
-                    color: Color(0xFF6B7280),
-                    size: 24,
-                  ),
-                );
-              },
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            member.displayName.split(' ').first,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              color: Color(0xFF111827),
+              height: 1.2,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: (member.role == FamilyMemberRole.admin
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFF10B981))
+                  .withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              member.role == FamilyMemberRole.admin ? 'Admin' : 'Member',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w500,
+                fontSize: 9,
+                color:
+                    member.role == FamilyMemberRole.admin
+                        ? const Color(0xFFEF4444)
+                        : const Color(0xFF10B981),
+                height: 1.2,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          name,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-            color: Color(0xFF6B7280),
-            height: 1.2,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

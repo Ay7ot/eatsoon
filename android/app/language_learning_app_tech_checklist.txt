@@ -1,0 +1,84 @@
+
+Language Learning App – Technical Discovery Checklist
+======================================================
+
+This checklist covers the key technical aspects the client needs to clarify before development begins.
+
+PHYSICAL FLASHCARDS
+--------------------
+1. What format do the codes on flashcards take?
+   - Alphanumeric (e.g. X7KD4), QR codes, or both?
+
+2. How are the codes generated and managed?
+   - Manual input or automatic generation?
+   - Will the developer generate QR codes?
+
+3. Are codes unique per flashcard, or reused?
+
+4. How are flashcards distributed or printed?
+   - Any specific format required for production?
+
+5. Do flashcards include visible categories/lessons?
+
+AUDIO CLIPS & PHRASES
+----------------------
+1. How are audio files named and linked to codes?
+   - Naming convention? (e.g. lesson1_phrase2.mp3)
+
+2. What file format and average length are the audio clips?
+
+3. Are there multiple languages?
+
+4. Is there text content associated with each phrase?
+   - Translation, pronunciation, etc.
+
+CONTENT STRUCTURE
+-------------------
+1. How is content grouped?
+   - Lessons, Units, Categories?
+
+2. Should users browse content manually, or only via code?
+
+3. Is content dynamic or static?
+
+FLASHCARD–CONTENT MAPPING
+---------------------------
+1. What fields should each flashcard-content map include?
+   - E.g., code, phrase, audio file, category
+
+2. Can codes map to multiple audio versions?
+
+3. What should happen with invalid/expired codes?
+
+APP BEHAVIOR / UX FLOW
+------------------------
+1. Expected flow after code entry/scan?
+   - Instant playback? Show phrase?
+
+2. Can users save/bookmark content?
+
+3. Is there any history or progress tracking?
+
+4. Should audio stream or cache for offline use?
+
+ADMIN BACKEND (CONTENT MGMT)
+------------------------------
+1. Where will content be stored? (Airtable, Sheets, CMS?)
+
+2. What fields will be tracked per record?
+
+3. Will flashcard codes also be managed in this backend?
+
+4. Should draft/published states be supported?
+
+5. How should syncing work?
+   - Real-time or manual refresh?
+
+EDGE CASES / FUTURE-PROOFING
+-----------------------------
+1. Will flashcards be re-used for other content later?
+
+2. Should content support multiple voice versions?
+
+3. Plans to support gamified learning in future?
+

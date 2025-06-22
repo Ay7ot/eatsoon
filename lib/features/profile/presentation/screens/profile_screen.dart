@@ -8,6 +8,7 @@ import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:eat_soon/features/home/models/activity_model.dart';
 import 'package:eat_soon/features/notifications/presentation/screens/notifications_screen.dart';
+import 'package:eat_soon/features/family/presentation/screens/family_members_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -285,15 +286,15 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildSecondaryActionButton(
-                'Help & Support',
-                'Get assistance',
-                Icons.help_outline_rounded,
-                const Color(0xFFF59E0B),
+                'Family',
+                'Manage family',
+                Icons.groups_outlined,
+                const Color(0xFF10B981),
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Help & Support coming soon!'),
-                      backgroundColor: Color(0xFFF59E0B),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FamilyMembersScreen(),
                     ),
                   );
                 },

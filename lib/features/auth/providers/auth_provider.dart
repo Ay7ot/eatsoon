@@ -35,16 +35,24 @@ class AuthProvider extends ChangeNotifier {
     _onAuthStateChanged(currentUser);
   }
 
-  void _onAuthStateChanged(User? user) {
+  Future<void> _onAuthStateChanged(User? user) async {
     debugPrint(
       'Auth state changed: user = ${user?.uid}, email = ${user?.email}',
     );
     if (user != null) {
+      final userData = await _authService.getUserData(user.uid);
       _user = UserModel.fromFirebaseUser(
         uid: user.uid,
-        name: user.displayName ?? 'User',
+        name: user.displayName ?? userData?['name'] ?? 'User',
         email: user.email ?? '',
-        photoURL: user.photoURL,
+        photoURL: user.photoURL ?? userData?['photoURL'],
+        familyId:
+            userData?['currentFamilyId'] ??
+            userData?['familyId'] ??
+            ((userData?['familyIds'] is List &&
+                    (userData?['familyIds'] as List).isNotEmpty)
+                ? (userData?['familyIds'] as List).first
+                : null),
       );
       _status = AuthStatus.authenticated;
       debugPrint('Status set to authenticated');

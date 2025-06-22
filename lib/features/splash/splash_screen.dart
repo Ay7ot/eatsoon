@@ -1,4 +1,3 @@
-import 'package:eat_soon/features/auth/presentation/screens/login_screen.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';

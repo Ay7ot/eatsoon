@@ -1,7 +1,6 @@
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/custom_textfield.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
-import 'package:eat_soon/features/home/presentation/screens/home_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';

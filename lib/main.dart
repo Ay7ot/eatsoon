@@ -7,7 +7,6 @@ import 'firebase_options.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/auth_wrapper.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
-import 'package:eat_soon/features/splash/splash_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:eat_soon/features/notifications/services/notification_service.dart';

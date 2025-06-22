@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:async';
-import 'package:eat_soon/features/home/models/food_item.dart';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});
