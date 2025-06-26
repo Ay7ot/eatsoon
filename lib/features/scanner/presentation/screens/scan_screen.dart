@@ -2,9 +2,16 @@ import 'package:camera/camera.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:eat_soon/features/scanner/presentation/screens/confirmation_screen.dart';
 import 'package:eat_soon/features/scanner/data/services/scanner_service.dart';
+import 'package:eat_soon/features/scanner/data/services/ml_kit_service.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
+
+// -------------------------------------------------------------
+// Scan workflow steps: product scan first, optional expiry date scan
+// -------------------------------------------------------------
+
+enum _ScanMode { product, expiryDate }
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -23,6 +30,25 @@ class _ScanScreenState extends State<ScanScreen>
   bool _cameraInitializationFailed = false;
 
   final ScannerService _scannerService = ScannerService();
+  // Current step in the scan flow.
+  _ScanMode _scanMode = _ScanMode.product;
+
+  // Holds the first scan result (product info) while we ask the user to scan the expiry date.
+  ScanResult? _initialScanResult;
+
+  // Dynamic UI helpers -------------------------------------------------------
+  String get _instructionText {
+    if (_cameraInitializationFailed) {
+      return 'Camera failed to start. This often happens after unlocking your phone. Use the restart button above to fix this.';
+    }
+    if (_scanMode == _ScanMode.expiryDate) {
+      return 'Expiry date not detected. Please focus on the expiry / "best before" date and scan again.';
+    }
+    return 'Position the product label within the frame. The app will automatically detect barcodes and expiry dates using AI.';
+  }
+
+  String get _scanButtonLabel =>
+      _scanMode == _ScanMode.expiryDate ? 'Scan Expiry Date' : 'Scan Product';
 
   // Keep state alive to prevent camera reinitialization when switching tabs
   @override
@@ -202,6 +228,12 @@ class _ScanScreenState extends State<ScanScreen>
   Future<void> _captureAndScan() async {
     if (!_isCameraInitialized || _isScanning || _isDisposed) return;
 
+    // Delegate to the secondary scan when we are collecting the expiry date.
+    if (_scanMode == _ScanMode.expiryDate) {
+      await _captureExpiryDateScan();
+      return;
+    }
+
     // Prevent rapid consecutive scans to avoid buffer buildup
     if (_isScanning) {
       debugPrint('Scan already in progress, ignoring request');
@@ -218,21 +250,32 @@ class _ScanScreenState extends State<ScanScreen>
       imageFile = await _cameraController!.takePicture();
       debugPrint('Image captured: ${imageFile.path}');
 
-      // Perform ML Kit scanning
+      // Perform full scan (barcode + OCR)
       final scanResult = await _scannerService.scanImage(imageFile.path);
 
       debugPrint('Scan completed: $scanResult');
 
       if (mounted && !_isDisposed) {
         if (scanResult.isSuccess) {
-          // Navigate to confirmation screen with detected data
-          await _pauseCameraAndNavigate(
-            scannedImagePath: imageFile.path,
-            detectedProductName: scanResult.productName,
-            detectedExpiryDate: scanResult.detectedExpiryDate,
-            productImageUrl: scanResult.productInfo?.imageUrl,
-            scanResult: scanResult,
-          );
+          if (!scanResult.hasExpiryDate) {
+            // We have product info but no expiry date – ask the user to scan again.
+            _initialScanResult = scanResult;
+            setState(() {
+              _scanMode = _ScanMode.expiryDate;
+            });
+            _showErrorSnackBar(
+              'Expiry date not detected. Please scan the expiry / "best before" section.',
+            );
+          } else {
+            // We have all we need – proceed to confirmation.
+            await _pauseCameraAndNavigate(
+              scannedImagePath: imageFile.path,
+              detectedProductName: scanResult.productName,
+              detectedExpiryDate: scanResult.detectedExpiryDate,
+              productImageUrl: scanResult.productInfo?.imageUrl,
+              scanResult: scanResult,
+            );
+          }
         } else {
           _showErrorSnackBar(scanResult.errorMessage ?? 'Scanning failed');
         }
@@ -243,7 +286,7 @@ class _ScanScreenState extends State<ScanScreen>
         _showErrorSnackBar('Failed to scan: $e');
       }
     } finally {
-      // Clean up image file to free memory
+      // Clean up image file
       if (imageFile != null) {
         try {
           final file = File(imageFile.path);
@@ -258,6 +301,69 @@ class _ScanScreenState extends State<ScanScreen>
       if (mounted && !_isDisposed) {
         setState(() {
           _isScanning = false;
+        });
+      }
+    }
+  }
+
+  // Secondary scan that only tries to find an expiry date using OCR.
+  Future<void> _captureExpiryDateScan() async {
+    if (!_isCameraInitialized || _isScanning || _isDisposed) return;
+
+    setState(() {
+      _isScanning = true;
+    });
+
+    XFile? imageFile;
+    try {
+      imageFile = await _cameraController!.takePicture();
+      debugPrint('Image captured for expiry date: ${imageFile.path}');
+
+      // OCR-only pass
+      final recognizedText = await _scannerService.quickTextScan(
+        imageFile.path,
+      );
+
+      final mlService = MLKitService();
+      final dates = mlService.extractExpiryDates(recognizedText);
+      final bestDate = mlService.getBestExpiryDate(dates);
+
+      await _pauseCameraAndNavigate(
+        scannedImagePath: imageFile.path,
+        detectedProductName: _initialScanResult?.productName,
+        detectedExpiryDate: bestDate,
+        productImageUrl: _initialScanResult?.productInfo?.imageUrl,
+        scanResult: _initialScanResult,
+      );
+    } catch (e) {
+      debugPrint('Expiry date scan error: $e');
+      if (mounted && !_isDisposed) {
+        _showErrorSnackBar('Failed to scan expiry date: $e');
+        // Proceed to confirmation without expiry date
+        await _pauseCameraAndNavigate(
+          detectedProductName: _initialScanResult?.productName,
+          detectedExpiryDate: null,
+          productImageUrl: _initialScanResult?.productInfo?.imageUrl,
+          scanResult: _initialScanResult,
+        );
+      }
+    } finally {
+      if (imageFile != null) {
+        try {
+          final file = File(imageFile.path);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (e) {
+          debugPrint('Cleanup error: $e');
+        }
+      }
+
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isScanning = false;
+          _scanMode = _ScanMode.product;
+          _initialScanResult = null;
         });
       }
     }
@@ -528,9 +634,7 @@ class _ScanScreenState extends State<ScanScreen>
                   ),
                 ),
                 child: Text(
-                  _cameraInitializationFailed
-                      ? 'Camera failed to start. This often happens after unlocking your phone. Use the restart button above to fix this.'
-                      : 'Position the product label within the frame. The app will automatically detect barcodes and expiry dates using AI.',
+                  _instructionText,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Inter',
@@ -583,9 +687,9 @@ class _ScanScreenState extends State<ScanScreen>
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'Scan Product',
-                                style: TextStyle(
+                              Text(
+                                _scanButtonLabel,
+                                style: const TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,

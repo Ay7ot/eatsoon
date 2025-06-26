@@ -860,17 +860,55 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                 color: Color(0xFF111827),
               ),
             ),
-            TextButton(
-              onPressed: () => _showInviteMemberDialog(familyId),
-              child: const Text(
-                'Add Member',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Color(0xFF10B981),
+            Row(
+              children: [
+                // Create Family
+                ElevatedButton.icon(
+                  onPressed: () => _showCreateFamilyDialog(),
+                  icon: const Icon(Icons.home_work_outlined, size: 18),
+                  label: const Text('New Family'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                // Add Member
+                OutlinedButton.icon(
+                  onPressed: () => _showInviteMemberDialog(familyId),
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                  label: const Text('Invite'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF10B981),
+                    side: const BorderSide(color: Color(0xFF10B981)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1592,90 +1630,6 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
       ),
     );
   }
-
-  // Widget _buildActivityItem({
-  //   required String name,
-  //   required String action,
-  //   required String time,
-  //   required String avatar,
-  // }) {
-  //   return Padding(
-  //     padding: const EdgeInsets.all(16),
-  //     child: Row(
-  //       children: [
-  //         Container(
-  //           width: 40,
-  //           height: 40,
-  //           decoration: BoxDecoration(
-  //             borderRadius: BorderRadius.circular(20),
-  //             border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-  //           ),
-  //           child: ClipRRect(
-  //             borderRadius: BorderRadius.circular(19),
-  //             child: Image.network(
-  //               avatar,
-  //               width: 40,
-  //               height: 40,
-  //               fit: BoxFit.cover,
-  //               errorBuilder: (context, error, stackTrace) {
-  //                 return Container(
-  //                   color: const Color(0xFFF8FAFC),
-  //                   child: const Icon(
-  //                     Icons.person_outline,
-  //                     color: Color(0xFF6B7280),
-  //                     size: 20,
-  //                   ),
-  //                 );
-  //               },
-  //             ),
-  //           ),
-  //         ),
-  //         const SizedBox(width: 12),
-  //         Expanded(
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               RichText(
-  //                 text: TextSpan(
-  //                   children: [
-  //                     TextSpan(
-  //                       text: name,
-  //                       style: const TextStyle(
-  //                         fontFamily: 'Inter',
-  //                         fontSize: 14,
-  //                         fontWeight: FontWeight.w600,
-  //                         color: Color(0xFF111827),
-  //                       ),
-  //                     ),
-  //                     TextSpan(
-  //                       text: ' $action',
-  //                       style: const TextStyle(
-  //                         fontFamily: 'Inter',
-  //                         fontSize: 14,
-  //                         fontWeight: FontWeight.w400,
-  //                         color: Color(0xFF111827),
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 2),
-  //               Text(
-  //                 time,
-  //                 style: const TextStyle(
-  //                   fontFamily: 'Inter',
-  //                   fontSize: 12,
-  //                   fontWeight: FontWeight.w400,
-  //                   color: Color(0xFF6B7280),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   String _formatDate(DateTime date) {
     final months = [

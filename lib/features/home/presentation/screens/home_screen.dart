@@ -11,6 +11,7 @@ import 'package:eat_soon/features/family/data/services/family_service.dart';
 import 'package:eat_soon/features/family/data/models/family_member_model.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:eat_soon/features/family/presentation/widgets/family_switcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -692,68 +693,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFamilyMembers() {
-    final familyId = context.watch<AuthProvider>().user?.familyId;
+    final familyId = context.watch<AuthProvider>().currentFamilyId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Family Members',
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                color: Color(0xFF111827),
-                height: 1.3,
-              ),
-            ),
-            if (familyId != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFF10B981).withOpacity(0.2),
-                  ),
-                ),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FamilyMembersScreen(),
-                      ),
-                    );
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'View All',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                          color: Color(0xFF10B981),
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 12,
-                        color: Color(0xFF10B981),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
+        const FamilySwitcher(),
         const SizedBox(height: 16),
         if (familyId == null)
           Container(
@@ -1027,6 +972,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 24),
+                      _buildFamilyActivitySection(familyId),
                     ],
                   ],
                 );
@@ -1182,6 +1130,126 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFamilyActivitySection(String familyId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recent Family Activity',
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<List<ActivityModel>>(
+          stream: _activityService.getFamilyActivitiesStream(
+            familyId,
+            limit: 3,
+          ),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF10B981),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return const Text('Error loading activity');
+            }
+
+            final activities = snapshot.data ?? [];
+            if (activities.isEmpty) {
+              return const Text(
+                'No recent family activity',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                ),
+              );
+            }
+
+            return Column(
+              children:
+                  activities
+                      .map(
+                        (a) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _buildFamilyActivityItem(a),
+                        ),
+                      )
+                      .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFamilyActivityItem(ActivityModel activity) {
+    final Color activityColor = Color(activity.colorValue);
+
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: activityColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Center(
+            child: SvgPicture.asset(
+              activity.iconPath,
+              width: 18,
+              height: 18,
+              colorFilter: ColorFilter.mode(activityColor, BlendMode.srcIn),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                activity.title,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                activity.userName ?? '',
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          activity.timeAgo,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 12,
+            color: Color(0xFF9CA3AF),
+          ),
+        ),
+      ],
     );
   }
 }

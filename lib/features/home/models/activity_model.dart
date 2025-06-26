@@ -19,6 +19,10 @@ class ActivityModel {
   final DateTime timestamp;
   final Map<String, dynamic> metadata;
 
+  // The user who performed the activity (only populated for family feed)
+  final String? userId;
+  final String? userName;
+
   ActivityModel({
     required this.id,
     required this.type,
@@ -27,6 +31,8 @@ class ActivityModel {
     this.imageUrl,
     required this.timestamp,
     this.metadata = const {},
+    this.userId,
+    this.userName,
   });
 
   // Create activity from Firestore document
@@ -44,6 +50,8 @@ class ActivityModel {
       imageUrl: data['imageUrl'],
       timestamp: (data['timestamp'] as Timestamp).toDate(),
       metadata: Map<String, dynamic>.from(data['metadata'] ?? {}),
+      userId: data['userId'],
+      userName: data['userName'],
     );
   }
 
@@ -56,6 +64,8 @@ class ActivityModel {
       'imageUrl': imageUrl,
       'timestamp': Timestamp.fromDate(timestamp),
       'metadata': metadata,
+      if (userId != null) 'userId': userId,
+      if (userName != null) 'userName': userName,
     };
   }
 

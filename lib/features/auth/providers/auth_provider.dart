@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eat_soon/features/auth/data/services/auth_service.dart';
 import 'package:eat_soon/features/auth/data/models/user_model.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
@@ -22,6 +23,8 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
+  String? get currentFamilyId => _user?.currentFamilyId;
+  List<String> get familyIds => _user?.familyIds ?? const [];
 
   AuthProvider() {
     // Check current auth state immediately
@@ -41,18 +44,15 @@ class AuthProvider extends ChangeNotifier {
     );
     if (user != null) {
       final userData = await _authService.getUserData(user.uid);
-      _user = UserModel.fromFirebaseUser(
+      _user = UserModel(
         uid: user.uid,
         name: user.displayName ?? userData?['name'] ?? 'User',
         email: user.email ?? '',
         photoURL: user.photoURL ?? userData?['photoURL'],
-        familyId:
-            userData?['currentFamilyId'] ??
-            userData?['familyId'] ??
-            ((userData?['familyIds'] is List &&
-                    (userData?['familyIds'] as List).isNotEmpty)
-                ? (userData?['familyIds'] as List).first
-                : null),
+        familyIds: List<String>.from(userData?['familyIds'] ?? const []),
+        currentFamilyId: userData?['currentFamilyId'] ?? userData?['familyId'],
+        createdAt: (userData?['createdAt'] as Timestamp?)?.toDate(),
+        lastLoginAt: (userData?['lastLoginAt'] as Timestamp?)?.toDate(),
       );
       _status = AuthStatus.authenticated;
       debugPrint('Status set to authenticated');
@@ -230,8 +230,40 @@ class AuthProvider extends ChangeNotifier {
   Future<void> reloadUser() async {
     try {
       await _authService.reloadUser();
+      // After reload, trigger auth state update again
+      final currentUser = FirebaseAuth.instance.currentUser;
+      await _onAuthStateChanged(currentUser);
     } catch (e) {
       _setError(e.toString());
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // FAMILY CONTEXT MANAGEMENT
+  // ---------------------------------------------------------------------------
+
+  /// Switch the active family for this user. Ensures Firestore is updated and
+  /// local state is refreshed.
+  Future<void> switchFamily(String newFamilyId) async {
+    if (_user == null) return;
+    try {
+      _setLoading(true);
+
+      final uid = _user!.uid;
+      final usersRef = FirebaseFirestore.instance.collection('users');
+
+      // Ensure the new familyId is present in familyIds array.
+      await usersRef.doc(uid).update({
+        'currentFamilyId': newFamilyId,
+        'familyIds': FieldValue.arrayUnion([newFamilyId]),
+      });
+
+      // Reload user data so listeners rebuild.
+      await reloadUser();
+    } catch (e) {
+      _setError('Failed to switch family: $e');
+    } finally {
+      _setLoading(false);
     }
   }
 }

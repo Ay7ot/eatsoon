@@ -9,6 +9,7 @@ import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:eat_soon/features/home/models/activity_model.dart';
 import 'package:eat_soon/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:eat_soon/features/family/presentation/screens/family_members_screen.dart';
+import 'package:eat_soon/features/family/presentation/widgets/family_switcher.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -124,6 +125,10 @@ class ProfileScreen extends StatelessWidget {
               height: 1.2,
             ),
           ),
+
+          // Family Switcher (shows current family & allows switching)
+          const SizedBox(height: 12),
+          const FamilySwitcher(),
           const SizedBox(height: 24),
 
           // Stats Row with Real Activity Data

@@ -5,7 +5,13 @@ class UserModel {
   final String name;
   final String email;
   final String? photoURL;
-  final String? familyId;
+
+  /// IDs of all families the user belongs to.
+  final List<String> familyIds;
+
+  /// ID of the family that is currently active in the UI context.
+  final String? currentFamilyId;
+
   final DateTime? createdAt;
   final DateTime? lastLoginAt;
 
@@ -14,10 +20,11 @@ class UserModel {
     required this.name,
     required this.email,
     this.photoURL,
-    this.familyId,
+    List<String>? familyIds,
+    this.currentFamilyId,
     this.createdAt,
     this.lastLoginAt,
-  });
+  }) : familyIds = familyIds ?? const [];
 
   // Factory constructor to create UserModel from Firebase User
   factory UserModel.fromFirebaseUser({
@@ -25,14 +32,14 @@ class UserModel {
     required String name,
     required String email,
     String? photoURL,
-    String? familyId,
   }) {
     return UserModel(
       uid: uid,
       name: name,
       email: email,
       photoURL: photoURL,
-      familyId: familyId,
+      familyIds: const [],
+      currentFamilyId: null,
       createdAt: DateTime.now(),
       lastLoginAt: DateTime.now(),
     );
@@ -46,7 +53,8 @@ class UserModel {
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       photoURL: data['photoURL'],
-      familyId: data['familyId'],
+      familyIds: List<String>.from(data['familyIds'] ?? const []),
+      currentFamilyId: data['currentFamilyId'] ?? data['familyId'],
       createdAt: data['createdAt']?.toDate(),
       lastLoginAt: data['lastLoginAt']?.toDate(),
     );
@@ -59,7 +67,8 @@ class UserModel {
       'name': name,
       'email': email,
       'photoURL': photoURL,
-      'familyId': familyId,
+      'familyIds': familyIds,
+      'currentFamilyId': currentFamilyId,
       'createdAt':
           createdAt != null
               ? Timestamp.fromDate(createdAt!)
@@ -77,7 +86,8 @@ class UserModel {
     String? name,
     String? email,
     String? photoURL,
-    String? familyId,
+    List<String>? familyIds,
+    String? currentFamilyId,
     DateTime? createdAt,
     DateTime? lastLoginAt,
   }) {
@@ -86,7 +96,8 @@ class UserModel {
       name: name ?? this.name,
       email: email ?? this.email,
       photoURL: photoURL ?? this.photoURL,
-      familyId: familyId ?? this.familyId,
+      familyIds: familyIds ?? this.familyIds,
+      currentFamilyId: currentFamilyId ?? this.currentFamilyId,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
     );
@@ -94,6 +105,16 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, name: $name, email: $email, photoURL: $photoURL, familyId: $familyId)';
+    return 'UserModel(uid: $uid, name: $name, email: $email, photoURL: $photoURL, familyIds: $familyIds, currentFamilyId: $currentFamilyId)';
   }
+
+  // ---------------------------------------------------------------------------
+  // BACKWARD-COMPATIBILITY -----------------------------------------------------
+  // ---------------------------------------------------------------------------
+
+  /// Deprecated getter exposing the single `familyId` field that existed in the
+  /// previous data model.  It now simply proxies `currentFamilyId` so legacy
+  /// code can continue to compile while we migrate.
+  @Deprecated('Use currentFamilyId instead')
+  String? get familyId => currentFamilyId;
 }

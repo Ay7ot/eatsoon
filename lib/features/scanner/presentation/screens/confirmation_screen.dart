@@ -6,6 +6,7 @@ import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
+import 'package:intl/intl.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   final String? scannedImagePath;
@@ -48,8 +49,13 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     _productNameController = TextEditingController(
       text: widget.detectedProductName ?? 'Organic Whole Milk',
     );
+    // Initialize expiry date controller with human-readable format
+    final initialDateString = widget.detectedExpiryDate ?? '01/25/2025';
+    final initialDate =
+        _tryParseExpiryDate(initialDateString) ??
+        DateTime.now().add(const Duration(days: 7));
     _expiryDateController = TextEditingController(
-      text: widget.detectedExpiryDate ?? '01/25/2025',
+      text: _formatDateForDisplay(initialDate),
     );
     _quantityController = TextEditingController(text: '1');
     _notesController = TextEditingController();
@@ -763,97 +769,139 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return FormField<String>(
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      initialValue: controller.text,
+      validator: validator,
+      builder: (state) {
+        // Resolve border color: detected > error > default
+        Color borderColor;
+        double borderWidth;
+        if (state.hasError) {
+          borderColor = const Color(0xFFEF4444); // red
+          borderWidth = 1.5;
+        } else if (isDetected) {
+          borderColor = const Color(0xFF10B981); // green
+          borderWidth = 1.5;
+        } else {
+          borderColor = const Color(0xFFD1D5DB); // gray
+          borderWidth = 1;
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF374151),
-                height: 1.2,
-              ),
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF374151),
+                    height: 1.2,
+                  ),
+                ),
+                if (isRequired)
+                  const Text(
+                    ' *',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFEF4444),
+                      height: 1.2,
+                    ),
+                  ),
+                const Spacer(),
+                if (isDetected)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'AI-detected',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF10B981),
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            if (isRequired)
-              const Text(
-                ' *',
-                style: TextStyle(
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderColor, width: borderWidth),
+                color: Colors.white,
+              ),
+              child: TextFormField(
+                controller: controller,
+                maxLines: maxLines,
+                keyboardType: keyboardType,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(
+                    icon,
+                    color: const Color(0xFF6B7280),
+                    size: 20,
+                  ),
+                  suffixIcon: suffix,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  hintStyle: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFFB2B7BE),
+                    height: 1.2,
+                  ),
+                  errorStyle: const TextStyle(
+                    height: 0,
+                    color: Colors.transparent,
+                  ),
+                ),
+                style: const TextStyle(
                   fontFamily: 'Inter',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFEF4444),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF1F2937),
                   height: 1.2,
                 ),
+                onChanged: (val) {
+                  state.didChange(val);
+                },
               ),
-            const Spacer(),
-            if (isDetected)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'AI-detected',
-                  style: TextStyle(
+            ),
+            if (state.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 4),
+                child: Text(
+                  state.errorText ?? '',
+                  style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF10B981),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFFEF4444),
                     height: 1.2,
                   ),
                 ),
               ),
           ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color:
-                  isDetected
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFD1D5DB),
-              width: isDetected ? 1.5 : 1,
-            ),
-            color: Colors.white,
-          ),
-          child: TextFormField(
-            controller: controller,
-            maxLines: maxLines,
-            keyboardType: keyboardType,
-            validator: validator,
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: const Color(0xFF6B7280), size: 20),
-              suffixIcon: suffix,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              hintStyle: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFFB2B7BE),
-                height: 1.2,
-              ),
-            ),
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF1F2937),
-              height: 1.2,
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -950,8 +998,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     );
     if (picked != null) {
       setState(() {
-        _expiryDateController.text =
-            '${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}';
+        _expiryDateController.text = _formatDateForDisplay(picked);
       });
     }
   }
@@ -1193,25 +1240,15 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     if (value == null || value.trim().isEmpty) {
       return 'Expiry date is required';
     }
-    // Basic date format validation (MM/DD/YYYY)
-    final dateRegex = RegExp(r'^\d{2}/\d{2}/\d{4}$');
-    if (!dateRegex.hasMatch(value.trim())) {
-      return 'Please use MM/DD/YYYY format';
-    }
-
     try {
-      final parts = value.trim().split('/');
-      final month = int.parse(parts[0]);
-      final day = int.parse(parts[1]);
-      final year = int.parse(parts[2]);
-
-      final date = DateTime(year, month, day);
+      final date = _tryParseExpiryDate(value.trim());
+      if (date == null) {
+        return 'Use format like 27 January 2025';
+      }
       final now = DateTime.now();
-
       if (date.isBefore(DateTime(now.year, now.month, now.day))) {
         return 'Expiry date cannot be in the past';
       }
-
       return null;
     } catch (e) {
       return 'Please enter a valid date';
@@ -1236,10 +1273,37 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   }
 
   DateTime _parseExpiryDate(String dateString) {
-    final parts = dateString.trim().split('/');
-    final month = int.parse(parts[0]);
-    final day = int.parse(parts[1]);
-    final year = int.parse(parts[2]);
-    return DateTime(year, month, day);
+    return _tryParseExpiryDate(dateString.trim()) ?? DateTime.now();
+  }
+
+  // -------------------------------------------------------------------------
+  // DATE HELPER METHODS
+  // -------------------------------------------------------------------------
+
+  /// Formats a [DateTime] into a human-readable string, e.g. '27 January 2025'.
+  String _formatDateForDisplay(DateTime date) {
+    return DateFormat('d MMMM yyyy').format(date);
+  }
+
+  /// Attempts to parse various date formats that might come from detection or
+  /// user input. Returns null if parsing fails.
+  DateTime? _tryParseExpiryDate(String input) {
+    final trimmed = input.trim();
+
+    final formats = [
+      DateFormat('MM/dd/yyyy'),
+      DateFormat('M/d/yyyy'),
+      DateFormat('yyyy-MM-dd'),
+      DateFormat('d MMMM yyyy'),
+    ];
+
+    for (final f in formats) {
+      try {
+        return f.parseStrict(trimmed);
+      } catch (_) {
+        // Ignore and try next format
+      }
+    }
+    return null;
   }
 }
