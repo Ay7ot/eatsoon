@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eat_soon/core/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:eat_soon/features/family/data/models/family_model.dart';
 import 'package:eat_soon/features/family/data/models/family_member_model.dart';
 import 'package:eat_soon/features/family/data/models/family_invitation_model.dart';
@@ -10,7 +12,7 @@ class FamilyService {
   factory FamilyService() => _instance;
   FamilyService._internal();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirestoreService.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String? get _currentUserId => _auth.currentUser?.uid;
@@ -199,72 +201,69 @@ class FamilyService {
     }
   }
 
-  // Accept family invitation
+  // Accept family invitation with enhanced error handling
   Future<void> acceptInvitation(String invitationId) async {
-    try {
-      if (_currentUserId == null) {
-        throw 'No user is currently signed in.';
+    int retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+      try {
+        final callable = FirebaseFunctions.instanceFor(
+          region: 'us-central1',
+        ).httpsCallable('acceptFamilyInvitation');
+
+        final result = await callable.call({'invitationId': invitationId});
+        debugPrint('Invitation accepted successfully: ${result.data}');
+        return; // Success, exit the retry loop
+      } on FirebaseFunctionsException catch (e) {
+        debugPrint('FirebaseFunctionsException: ${e.code} - ${e.message}');
+
+        // Handle specific Firebase Functions errors
+        switch (e.code) {
+          case 'unauthenticated':
+            throw 'You must be signed in to accept invitations.';
+          case 'permission-denied':
+            throw 'You do not have permission to accept this invitation.';
+          case 'not-found':
+            throw 'This invitation could not be found or has expired.';
+          case 'already-exists':
+            throw 'You are already a member of this family.';
+          case 'internal':
+          case 'unknown':
+            // These might be transient Google Play Services issues
+            if (retryCount < maxRetries - 1) {
+              retryCount++;
+              debugPrint(
+                'Retrying invitation acceptance (attempt $retryCount)...',
+              );
+              await Future.delayed(Duration(seconds: retryCount * 2));
+              continue; // Retry the operation
+            }
+            throw 'A server error occurred. Please try again later.';
+          default:
+            throw 'Failed to accept invitation: ${e.message}';
+        }
+      } catch (e) {
+        debugPrint('Unexpected error accepting invitation: $e');
+
+        // Handle potential Google Play Services authentication failures
+        if (e.toString().contains('NullPointerException') ||
+            e.toString().contains('getToken') ||
+            e.toString().contains('MissingPluginException')) {
+          if (retryCount < maxRetries - 1) {
+            retryCount++;
+            debugPrint(
+              'Detected authentication issue, retrying (attempt $retryCount)...',
+            );
+            await Future.delayed(Duration(seconds: retryCount * 3));
+            continue; // Retry the operation
+          }
+
+          throw 'Unable to connect to Google services. Please ensure you have a stable internet connection and try again.';
+        }
+
+        throw 'An unexpected error occurred while accepting the invitation.';
       }
-
-      final user = _auth.currentUser!;
-      final userEmail = user.email?.toLowerCase() ?? '';
-
-      // Get invitation
-      final invitationDoc =
-          await _firestore
-              .collection('familyInvitations')
-              .doc(invitationId)
-              .get();
-      if (!invitationDoc.exists) {
-        throw 'Invitation not found.';
-      }
-
-      final invitation = FamilyInvitationModel.fromFirestore(invitationDoc);
-
-      // Verify invitation is for current user
-      if (invitation.inviteeEmail != userEmail) {
-        throw 'This invitation is not for your email address.';
-      }
-
-      // Check if invitation is still valid
-      if (invitation.isExpired || !invitation.isPending) {
-        throw 'This invitation has expired or is no longer valid.';
-      }
-
-      // Add user to family
-      await _addMemberToFamily(
-        familyId: invitation.familyId,
-        userId: _currentUserId!,
-        displayName: user.displayName ?? 'User',
-        email: userEmail,
-        profileImage: user.photoURL,
-        role: FamilyMemberRole.member,
-        status: FamilyMemberStatus.active,
-      );
-
-      // Update user's family association
-      await _updateUserFamilyAssociation(
-        _currentUserId!,
-        invitation.familyId,
-        setAsCurrent: true,
-      );
-
-      // Update invitation status
-      await _firestore
-          .collection('familyInvitations')
-          .doc(invitationId)
-          .update({
-            'status': InvitationStatus.accepted.name,
-            'respondedAt': FieldValue.serverTimestamp(),
-          });
-
-      // Update family member count
-      await _updateFamilyMemberCount(invitation.familyId);
-
-      debugPrint('Invitation accepted successfully');
-    } catch (e) {
-      debugPrint('Error accepting invitation: $e');
-      throw 'Failed to accept invitation: $e';
     }
   }
 

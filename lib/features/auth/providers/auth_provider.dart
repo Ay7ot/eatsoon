@@ -27,15 +27,8 @@ class AuthProvider extends ChangeNotifier {
   List<String> get familyIds => _user?.familyIds ?? const [];
 
   AuthProvider() {
-    // Check current auth state immediately
-    _initializeAuthState();
-    // Listen to auth state changes
+    // Listen to auth state changes, which will also handle the initial state.
     _authService.authStateChanges.listen(_onAuthStateChanged);
-  }
-
-  void _initializeAuthState() {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    _onAuthStateChanged(currentUser);
   }
 
   Future<void> _onAuthStateChanged(User? user) async {

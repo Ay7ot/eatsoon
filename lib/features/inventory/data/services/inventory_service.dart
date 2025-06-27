@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eat_soon/core/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:eat_soon/features/home/models/food_item.dart';
@@ -10,7 +11,8 @@ class InventoryService {
   factory InventoryService() => _instance;
   InventoryService._internal();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  final FirebaseFirestore _firestore = FirestoreService.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ActivityService _activityService = ActivityService();
 

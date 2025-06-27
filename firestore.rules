@@ -66,10 +66,25 @@ service cloud.firestore {
       allow read: if request.auth != null &&
         resource.data.members.keys().hasAny([request.auth.uid]);
 
-      // Update: only family admin can update the members list.
+      // Update:
+      // - The family admin can update the entire document.
+      // - An invited user can add ONLY themselves to the 'members' map with the 'member' role.
       allow update: if request.auth != null &&
         exists(/databases/$(database)/documents/families/$(familyId)) &&
-        get(/databases/$(database)/documents/families/$(familyId)).data.adminUserId == request.auth.uid;
+        (
+          // Condition 1: Requester is the family admin.
+          get(/databases/$(database)/documents/families/$(familyId)).data.adminUserId == request.auth.uid
+          ||
+          // Condition 2: Requester is adding ONLY themselves to the family.
+          (
+            // The set of changed keys in the 'members' map must contain only the user's own UID.
+            request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]) &&
+            // The user must not have been a member before this update.
+            !resource.data.members.keys().hasAny([request.auth.uid]) &&
+            // The user must be adding themselves with the 'member' role. They cannot grant themselves admin.
+            request.resource.data.members[request.auth.uid].role == 'member'
+          )
+        );
 
       allow delete: if false;
     }
