@@ -12,6 +12,7 @@ import 'package:eat_soon/features/family/data/services/family_service.dart';
 import 'package:eat_soon/features/home/models/activity_model.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
+import 'package:eat_soon/shared/widgets/recent_activity.dart';
 
 class FamilyMembersScreen extends StatefulWidget {
   const FamilyMembersScreen({super.key});
@@ -503,164 +504,215 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
   void _showJoinFamilyDialog() {
     final TextEditingController codeController = TextEditingController();
     final _formKey = GlobalKey<FormState>();
+    bool isLoading = false;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
-          (context) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(32),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.mail_outline,
-                      color: Color(0xFF3B82F6),
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Enter Invitation Code',
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Paste the invitation code sent to your email to join the family.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Form(
-                    key: _formKey,
-                    child: TextFormField(
-                      controller: codeController,
-                      decoration: const InputDecoration(
-                        hintText: 'Invitation Code',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter the code';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: const BorderSide(color: Color(0xFFE5E7EB)),
-                            ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(32),
                           ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF374151),
-                            ),
+                          child: const Icon(
+                            Icons.mail_outline,
+                            color: Color(0xFF3B82F6),
+                            size: 32,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            if (!_formKey.currentState!.validate()) return;
-                            try {
-                              await _familyService.acceptInvitation(
-                                codeController.text.trim(),
-                              );
-                              await context.read<AuthProvider>().reloadUser();
-                              if (mounted) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Successfully joined family!',
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Enter Invitation Code',
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Paste the invitation code sent to your email to join the family.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 16,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Form(
+                          key: _formKey,
+                          child: TextFormField(
+                            controller: codeController,
+                            enabled: !isLoading,
+                            decoration: const InputDecoration(
+                              hintText: 'Invitation Code',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter the code';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed:
+                                    isLoading
+                                        ? null
+                                        : () => Navigator.pop(context),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(
+                                      color: Color(0xFFE5E7EB),
                                     ),
-                                    backgroundColor: Color(0xFF10B981),
                                   ),
-                                );
-                                setState(() {});
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Failed to join family: $e'),
-                                    backgroundColor: Colors.red,
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF374151),
                                   ),
-                                );
-                              }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Join',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed:
+                                    isLoading
+                                        ? null
+                                        : () async {
+                                          if (!_formKey.currentState!
+                                              .validate())
+                                            return;
+
+                                          setDialogState(() {
+                                            isLoading = true;
+                                          });
+
+                                          try {
+                                            await _familyService
+                                                .acceptInvitation(
+                                                  codeController.text.trim(),
+                                                );
+                                            await context
+                                                .read<AuthProvider>()
+                                                .reloadUser();
+                                            if (mounted) {
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Successfully joined family!',
+                                                  ),
+                                                  backgroundColor: Color(
+                                                    0xFF10B981,
+                                                  ),
+                                                ),
+                                              );
+                                              setState(() {});
+                                            }
+                                          } catch (e) {
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Failed to join family: $e',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          } finally {
+                                            if (mounted) {
+                                              setDialogState(() {
+                                                isLoading = false;
+                                              });
+                                            }
+                                          }
+                                        },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3B82F6),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child:
+                                    isLoading
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Join',
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
+                ),
           ),
     );
   }
@@ -677,7 +729,18 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
           const SizedBox(height: 32),
           _buildMembersSection(familyId),
           const SizedBox(height: 32),
-          _buildRecentActivitySection(familyId),
+          RecentActivity(
+            title: 'Recent Family Activity',
+            stream: ActivityService().getFamilyActivitiesStream(
+              familyId,
+              limit: 5,
+            ),
+            showUserAvatars: true,
+            showDateGroups: true,
+            onViewAll: () {
+              // TODO: Navigate to full family activity screen
+            },
+          ),
         ],
       ),
     );
@@ -848,370 +911,345 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Family Members',
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                color: Color(0xFF111827),
-              ),
-            ),
-            Row(
-              children: [
-                // Create Family
-                ElevatedButton.icon(
-                  onPressed: () => _showCreateFamilyDialog(),
-                  icon: const Icon(Icons.home_work_outlined, size: 18),
-                  label: const Text('New Family'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    textStyle: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Add Member
-                OutlinedButton.icon(
-                  onPressed: () => _showInviteMemberDialog(familyId),
-                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                  label: const Text('Invite'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF10B981),
-                    side: const BorderSide(color: Color(0xFF10B981)),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    textStyle: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+        const Text(
+          'Family Members',
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: Color(0xFF111827),
+          ),
         ),
         const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: StreamBuilder<List<FamilyMemberModel>>(
-            stream: _familyService.getFamilyMembersStream(familyId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (snapshot.hasError) {
-                return Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Center(child: Text('Error: ${snapshot.error}')),
-                );
-              }
-              final members = snapshot.data ?? [];
-              if (members.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: Text('No family members found.')),
-                );
-              }
-
-              return Column(
-                children: [
-                  // Add pending invitations first
-                  StreamBuilder<List<FamilyInvitationModel>>(
-                    stream: _familyService.getPendingInvitationsStream(
-                      familyId,
-                    ),
-                    builder: (context, inviteSnapshot) {
-                      final invitations = inviteSnapshot.data ?? [];
-                      return Column(
-                        children: [
-                          // Members
-                          ...members.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final member = entry.value;
-                            return Column(
-                              children: [
-                                _buildMemberTile(member),
-                                if (index < members.length - 1 ||
-                                    invitations.isNotEmpty)
-                                  const Divider(
-                                    height: 1,
-                                    color: Color(0xFFF3F4F6),
-                                  ),
-                              ],
-                            );
-                          }),
-                          // Pending invitations
-                          ...invitations.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final invitation = entry.value;
-                            return Column(
-                              children: [
-                                _buildInvitationTile(invitation),
-                                if (index < invitations.length - 1)
-                                  const Divider(
-                                    height: 1,
-                                    color: Color(0xFFF3F4F6),
-                                  ),
-                              ],
-                            );
-                          }),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+        StreamBuilder<List<FamilyMemberModel>>(
+          stream: _familyService.getFamilyMembersStream(familyId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: CircularProgressIndicator()),
               );
-            },
-          ),
+            }
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(32),
+                child: Center(child: Text('Error: ${snapshot.error}')),
+              );
+            }
+            final members = snapshot.data ?? [];
+            if (members.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: Text('No family members found.')),
+              );
+            }
+
+            // Get current user info to determine admin status
+            final currentUserId = context.read<AuthProvider>().user?.uid;
+            final currentUserMember = members.firstWhere(
+              (member) => member.userId == currentUserId,
+              orElse: () => members.first,
+            );
+            final isCurrentUserAdmin = currentUserMember.isAdmin;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ...members.map(
+                  (member) => _buildMemberTile(
+                    member,
+                    familyId,
+                    isCurrentUserAdmin,
+                    currentUserId,
+                  ),
+                ),
+                StreamBuilder<List<FamilyInvitationModel>>(
+                  stream: _familyService.getPendingInvitationsStream(familyId),
+                  builder: (context, inviteSnapshot) {
+                    if (inviteSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const SizedBox.shrink();
+                    }
+                    final invitations = inviteSnapshot.data ?? [];
+                    return Column(
+                      children:
+                          invitations
+                              .map(
+                                (invitation) =>
+                                    _buildInvitationTile(invitation),
+                              )
+                              .toList(),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        // Action buttons below the members list
+        Row(
+          children: [
+            // Create Family
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _showCreateFamilyDialog(),
+                icon: const Icon(Icons.home_work_outlined, size: 18),
+                label: const Text('New Family'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  textStyle: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Add Member
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showInviteMemberDialog(familyId),
+                icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                label: const Text('Invite Member'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF10B981),
+                  side: const BorderSide(color: Color(0xFF10B981)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  textStyle: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildMemberTile(FamilyMemberModel member) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+  Widget _buildMemberTile(
+    FamilyMemberModel member,
+    String familyId,
+    bool isCurrentUserAdmin,
+    String? currentUserId,
+  ) {
+    final isCurrentUser = member.userId == currentUserId;
+    final canRemove = isCurrentUserAdmin && !isCurrentUser;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2.4,
-            offset: const Offset(0, 1.2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(27),
-              child:
-                  member.profileImage != null
-                      ? Image.network(
-                        member.profileImage!,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 56,
-                            height: 56,
-                            color: const Color(0xFFF8FAFC),
-                            child: const Icon(
-                              Icons.person_outline,
-                              color: Color(0xFF6B7280),
-                              size: 24,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            // Optional: view member details
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: _getRoleColor(member.role).withOpacity(0.1),
+                  backgroundImage:
+                      member.profileImage != null
+                          ? NetworkImage(member.profileImage!)
+                          : null,
+                  child:
+                      member.profileImage == null
+                          ? Text(
+                            member.displayName.isNotEmpty
+                                ? member.displayName[0].toUpperCase()
+                                : '?',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: _getRoleColor(member.role),
                             ),
-                          );
-                        },
-                      )
-                      : Container(
-                        width: 56,
-                        height: 56,
-                        color: const Color(0xFFF8FAFC),
-                        child: const Icon(
-                          Icons.person_outline,
-                          color: Color(0xFF6B7280),
-                          size: 24,
+                          )
+                          : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        member.displayName,
+                        style: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: Color(0xFF111827),
                         ),
                       ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  member.displayName,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                    color: Color(0xFF111827),
-                    height: 1.2,
+                      const SizedBox(height: 2),
+                      Text(
+                        member.email,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Joined ${_getTimeAgo(member.joinedAt)}',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  member.email,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
-                    height: 1.2,
-                  ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Role badge (or "You" tag)
+                    isCurrentUser
+                        ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDBEAFE),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'You',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 11,
+                              color: Color(0xFF1E40AF),
+                            ),
+                          ),
+                        )
+                        : Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getRoleColor(member.role).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            member.roleDisplayName,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              color: _getRoleColor(member.role),
+                            ),
+                          ),
+                        ),
+                    if (canRemove) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          iconSize: 18,
+                          icon: const Icon(
+                            Icons.close,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                          onPressed:
+                              () => _showRemoveMemberDialog(member, familyId),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: _getRoleColor(member.role).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              member.role.name,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: _getRoleColor(member.role),
-                height: 1.2,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Color _getRoleColor(FamilyMemberRole role) {
-    switch (role) {
-      case FamilyMemberRole.admin:
-        return const Color(0xFFEF4444);
-      case FamilyMemberRole.member:
-        return const Color(0xFF10B981);
-    }
-  }
-
   Widget _buildInvitationTile(FamilyInvitationModel invitation) {
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Warning Icon
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(24),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F9FF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0F2FE)),
+        ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 22,
+              backgroundColor: Color(0xFFBAE6FD),
+              child: Icon(
+                Icons.mail_outline_rounded,
+                color: Color(0xFF0C4A6E),
+                size: 20,
+              ),
             ),
-            child: const Icon(
-              Icons.warning_rounded,
-              color: Color(0xFFF59E0B),
-              size: 24,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    invitation.inviteeEmail,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Nunito',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: Color(0xFF075985),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Pending · Sent ${_getTimeAgo(invitation.createdAt)}',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      color: Color(0xFF0369A1),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // Invitation Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  invitation.inviteeEmail.split(
-                    '@',
-                  )[0], // Extract name from email
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  invitation.inviteeEmail,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Invitation sent ${_getTimeAgo(invitation.createdAt)}',
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    color: Color(0xFF9CA3AF),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Status Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Resend',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12,
-                    color: Color(0xFFF59E0B),
-                  ),
-                ),
-                SizedBox(width: 4),
-                Text(
-                  'Pending',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    color: Color(0xFFF59E0B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1234,400 +1272,424 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
   void _showInviteMemberDialog(String familyId) {
     final TextEditingController emailController = TextEditingController();
     final _formKey = GlobalKey<FormState>();
+    bool isLoading = false;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
-          (context) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Icon
-                  Container(
-                    width: 64,
-                    height: 64,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(32),
-                    ),
-                    child: const Icon(
-                      Icons.person_add_rounded,
-                      color: Color(0xFF10B981),
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Title
-                  const Text(
-                    'Invite Family Member',
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Enter the email address of the person you\'d like to invite to your family.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Input
-                  Form(
-                    key: _formKey,
-                    child: TextFormField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        hintText: 'Enter email address',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Icon
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          child: const Icon(
+                            Icons.person_add_rounded,
                             color: Color(0xFF10B981),
+                            size: 32,
                           ),
                         ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter an email address';
-                        }
-                        if (!RegExp(
-                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        ).hasMatch(value.trim())) {
-                          return 'Please enter a valid email address';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: const BorderSide(color: Color(0xFFE5E7EB)),
-                            ),
-                          ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF374151),
-                            ),
+                        const SizedBox(height: 20),
+                        // Title
+                        const Text(
+                          'Invite Family Member',
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 20,
+                            color: Color(0xFF111827),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            if (!_formKey.currentState!.validate()) return;
-                            try {
-                              await _familyService.inviteMember(
-                                familyId: familyId,
-                                email: emailController.text.trim(),
-                              );
-                              if (mounted) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Invitation sent successfully!',
-                                    ),
-                                    backgroundColor: Color(0xFF10B981),
-                                  ),
-                                );
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Enter the email address of the person you\'d like to invite to your family.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 16,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Input
+                        Form(
+                          key: _formKey,
+                          child: TextFormField(
+                            controller: emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            enabled: !isLoading,
+                            decoration: InputDecoration(
+                              hintText: 'Enter email address',
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF10B981),
+                                ),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter an email address';
                               }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Failed to send invitation: $e',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(value.trim())) {
+                                return 'Please enter a valid email address';
                               }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Send Invite',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                              return null;
+                            },
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed:
+                                    isLoading
+                                        ? null
+                                        : () => Navigator.pop(context),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(
+                                      color: Color(0xFFE5E7EB),
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF374151),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed:
+                                    isLoading
+                                        ? null
+                                        : () async {
+                                          if (!_formKey.currentState!
+                                              .validate())
+                                            return;
+
+                                          setDialogState(() {
+                                            isLoading = true;
+                                          });
+
+                                          try {
+                                            await _familyService.inviteMember(
+                                              familyId: familyId,
+                                              email:
+                                                  emailController.text.trim(),
+                                            );
+                                            if (mounted) {
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Invitation sent successfully!',
+                                                  ),
+                                                  backgroundColor: Color(
+                                                    0xFF10B981,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          } catch (e) {
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Failed to send invitation: $e',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          } finally {
+                                            if (mounted) {
+                                              setDialogState(() {
+                                                isLoading = false;
+                                              });
+                                            }
+                                          }
+                                        },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF10B981),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child:
+                                    isLoading
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Send Invite',
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
+                ),
           ),
     );
   }
 
-  Widget _buildRecentActivitySection(String familyId) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Family Activity',
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: Color(0xFF111827),
-          ),
-        ),
-        const SizedBox(height: 16),
-        StreamBuilder<List<ActivityModel>>(
-          stream: ActivityService().getFamilyActivitiesStream(
-            familyId,
-            limit: 5,
-          ),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Center(child: CircularProgressIndicator()),
-              );
-            }
+  void _showRemoveMemberDialog(FamilyMemberModel member, String familyId) {
+    bool isLoading = false;
 
-            if (snapshot.hasError) {
-              return Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Center(child: Text('Error loading activity')),
-              );
-            }
-
-            final activities = snapshot.data ?? [];
-
-            if (activities.isEmpty) {
-              return Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.history, size: 32, color: Color(0xFF9CA3AF)),
-                      SizedBox(height: 8),
-                      Text(
-                        'No recent activity',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 16,
-                          color: Color(0xFF6B7280),
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children:
-                    activities.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final activity = entry.value;
-                      return Column(
-                        children: [
-                          _buildRealActivityItem(activity),
-                          if (index < activities.length - 1)
-                            const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                        ],
-                      );
-                    }).toList(),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRealActivityItem(ActivityModel activity) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(19),
-              child:
-                  activity.imageUrl != null && activity.imageUrl!.isNotEmpty
-                      ? Image.network(
-                        activity.imageUrl!,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildActivityIcon(activity);
-                        },
-                      )
-                      : _buildActivityIcon(activity),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: 'You',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Warning Icon
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          child: const Icon(
+                            Icons.person_remove_rounded,
+                            color: Color(0xFFEF4444),
+                            size: 32,
+                          ),
                         ),
-                      ),
-                      TextSpan(
-                        text: ' ${activity.title.toLowerCase()}',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF111827),
+                        const SizedBox(height: 20),
+                        // Title
+                        const Text(
+                          'Remove Family Member',
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 20,
+                            color: Color(0xFF111827),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  activity.timeAgo,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                        const SizedBox(height: 8),
+                        // Content
+                        Text(
+                          'Are you sure you want to remove ${member.displayName} from this family? They will lose access to the shared pantry and all family data.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 16,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Action Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed:
+                                    isLoading
+                                        ? null
+                                        : () => Navigator.pop(context),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(
+                                      color: Color(0xFFE5E7EB),
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF374151),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed:
+                                    isLoading
+                                        ? null
+                                        : () async {
+                                          setDialogState(() {
+                                            isLoading = true;
+                                          });
 
-  Widget _buildActivityIcon(ActivityModel activity) {
-    final Color activityColor = Color(activity.colorValue);
-    return Container(
-      width: 40,
-      height: 40,
-      color: activityColor.withOpacity(0.1),
-      child: Center(
-        child: SvgPicture.asset(
-          activity.iconPath,
-          width: 20,
-          height: 20,
-          colorFilter: ColorFilter.mode(activityColor, BlendMode.srcIn),
-        ),
-      ),
+                                          try {
+                                            await _familyService.removeMember(
+                                              familyId: familyId,
+                                              userId: member.userId,
+                                            );
+                                            if (mounted) {
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '${member.displayName} has been removed from the family.',
+                                                  ),
+                                                  backgroundColor: const Color(
+                                                    0xFF10B981,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          } catch (e) {
+                                            if (mounted) {
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Failed to remove member: $e',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          } finally {
+                                            if (mounted) {
+                                              setDialogState(() {
+                                                isLoading = false;
+                                              });
+                                            }
+                                          }
+                                        },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFEF4444),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child:
+                                    isLoading
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Remove',
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+          ),
     );
   }
 
@@ -1647,5 +1709,14 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
       'Dec',
     ];
     return '${months[date.month - 1]} ${date.year}';
+  }
+
+  Color _getRoleColor(FamilyMemberRole role) {
+    switch (role) {
+      case FamilyMemberRole.admin:
+        return const Color(0xFFEF4444);
+      case FamilyMemberRole.member:
+        return const Color(0xFF10B981);
+    }
   }
 }

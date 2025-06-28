@@ -462,30 +462,30 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                     )
                   else
-                  Flexible(
-                    child: ListView(
-                      shrinkWrap: true,
-                      children:
+                    Flexible(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children:
                             categories.map((category) {
-                            return CheckboxListTile(
-                              title: Text(category),
+                              return CheckboxListTile(
+                                title: Text(category),
                                 value: tempSelectedCategories.contains(
                                   category,
                                 ),
-                              onChanged: (bool? value) {
-                                setModalState(() {
-                                  if (value == true) {
-                                    tempSelectedCategories.add(category);
-                                  } else {
-                                    tempSelectedCategories.remove(category);
-                                  }
-                                });
-                              },
-                              activeColor: const Color(0xFF10B981),
-                            );
-                          }).toList(),
+                                onChanged: (bool? value) {
+                                  setModalState(() {
+                                    if (value == true) {
+                                      tempSelectedCategories.add(category);
+                                    } else {
+                                      tempSelectedCategories.remove(category);
+                                    }
+                                  });
+                                },
+                                activeColor: const Color(0xFF10B981),
+                              );
+                            }).toList(),
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
@@ -665,19 +665,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
               allItems.map((item) => item.category).toSet().toList()..sort();
 
           return Column(
-        children: [
-          // Sticky Header
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+            children: [
+              // Sticky Header
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.95),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20.0,
@@ -760,39 +760,39 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                     ],
                   ),
-            ),
-          ),
+                ),
+              ),
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  // Statistics Cards
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    children: [
+                      // Statistics Cards
                       _buildStatisticsCards(statistics),
-                  const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                  // Filter Tabs
-                  _buildFilterTabs(),
-                  const SizedBox(height: 24),
+                      // Filter Tabs
+                      _buildFilterTabs(),
+                      const SizedBox(height: 24),
 
-                  // Search Bar
-                  _buildSearchBar(),
-                  const SizedBox(height: 24),
+                      // Search Bar
+                      _buildSearchBar(),
+                      const SizedBox(height: 24),
 
-                  // Results info
-                  if (searchQuery.isNotEmpty ||
-                      selectedFilter != 'All Items' ||
-                      selectedCategories.isNotEmpty)
+                      // Results info
+                      if (searchQuery.isNotEmpty ||
+                          selectedFilter != 'All Items' ||
+                          selectedCategories.isNotEmpty)
                         _buildResultsInfo(filteredItems.length),
 
-                  // Inventory Items
+                      // Inventory Items
                       _buildInventoryList(filteredItems),
-                ],
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
           );
         },
       ),
@@ -913,7 +913,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }) {
     return Container(
       height: 115,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14.4),
@@ -938,29 +938,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w700,
-                  fontSize: 26,
+                  fontSize: 22,
                   color: valueColor,
                   height: 1.1,
                 ),
               ),
               Container(
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: iconBgColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: iconColor, size: 20),
+                child: Icon(icon, color: iconColor, size: 16),
               ),
             ],
           ),
           const Spacer(),
           // Label just above the progress bar
-                Text(
+          Text(
             label,
             style: const TextStyle(
-                    fontFamily: 'Inter',
+              fontFamily: 'Inter',
               fontWeight: FontWeight.w500,
               fontSize: 13,
               color: Color(0xFF6B7280),
@@ -1309,9 +1309,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 GestureDetector(
                   onTap: () => _showItemMenu(item),
                   child: const Icon(
-                  Icons.more_vert_rounded,
-                  color: Color(0xFF9CA3AF),
-                  size: 20,
+                    Icons.more_vert_rounded,
+                    color: Color(0xFF9CA3AF),
+                    size: 20,
                   ),
                 ),
               ],

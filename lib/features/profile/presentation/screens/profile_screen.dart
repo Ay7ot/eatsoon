@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
@@ -10,6 +9,7 @@ import 'package:eat_soon/features/home/models/activity_model.dart';
 import 'package:eat_soon/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:eat_soon/features/family/presentation/screens/family_members_screen.dart';
 import 'package:eat_soon/features/family/presentation/widgets/family_switcher.dart';
+import 'package:eat_soon/shared/widgets/recent_activity.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -33,7 +33,14 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 _buildQuickActionsSection(context),
                 const SizedBox(height: 32),
-                _buildRecentActivitySection(),
+                RecentActivity(
+                  title: 'Recent Activity',
+                  stream: ActivityService().getActivitiesStream(limit: 5),
+                  showDateGroups: true,
+                  onViewAll: () {
+                    // TODO: Navigate to full activity screen
+                  },
+                ),
                 const SizedBox(height: 32),
                 _buildAccountSection(context, authProvider),
                 const SizedBox(height: 96), // Bottom padding for navigation
@@ -464,258 +471,6 @@ class ProfileScreen extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentActivitySection() {
-    final ActivityService activityService = ActivityService();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Activity',
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: Color(0xFF111827),
-            height: 1.3,
-          ),
-        ),
-        const SizedBox(height: 16),
-        StreamBuilder<List<ActivityModel>>(
-          stream: activityService.getActivitiesStream(limit: 5),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return _buildActivityLoadingState();
-            }
-
-            if (snapshot.hasError) {
-              return _buildActivityErrorState();
-            }
-
-            final activities = snapshot.data ?? [];
-
-            if (activities.isEmpty) {
-              return _buildNoActivityState();
-            }
-
-            return Column(
-              children:
-                  activities
-                      .map(
-                        (a) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildActivityItemFromModel(a),
-                        ),
-                      )
-                      .toList(),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActivityLoadingState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2.4,
-            offset: const Offset(0, 1.2),
-          ),
-        ],
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF10B981),
-          strokeWidth: 2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityErrorState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2.4,
-            offset: const Offset(0, 1.2),
-          ),
-        ],
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.error_outline, size: 32, color: Color(0xFFEF4444)),
-          SizedBox(height: 8),
-          Text(
-            'Error loading activity',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-              color: Color(0xFF6B7280),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoActivityState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2.4,
-            offset: const Offset(0, 1.2),
-          ),
-        ],
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.history, size: 32, color: Color(0xFF9CA3AF)),
-          SizedBox(height: 12),
-          Text(
-            'No recent activity',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-              color: Color(0xFF6B7280),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItemFromModel(ActivityModel activity) {
-    final Color activityColor = Color(activity.colorValue);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2.4,
-            offset: const Offset(0, 1.2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(9.6),
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8.6),
-              child: _buildActivityImage(
-                activity.imageUrl,
-                activity.iconPath,
-                activityColor,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity.title,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                    color: Color(0xFF111827),
-                    height: 1.2,
-                  ),
-                ),
-                if (activity.subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    activity.subtitle,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14,
-                      color: Color(0xFF6B7280),
-                      height: 1.2,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            activity.timeAgo,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w400,
-              fontSize: 12,
-              color: Color(0xFF9CA3AF),
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityImage(String? imageUrl, String iconPath, Color color) {
-    if (imageUrl != null && imageUrl.isNotEmpty) {
-      return Image.network(
-        imageUrl,
-        width: 56,
-        height: 56,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildActivityIcon(iconPath, color),
-      );
-    }
-    return _buildActivityIcon(iconPath, color);
-  }
-
-  Widget _buildActivityIcon(String iconPath, Color color) {
-    return Container(
-      width: 56,
-      height: 56,
-      color: color.withOpacity(0.1),
-      child: Center(
-        child: SvgPicture.asset(
-          iconPath,
-          width: 24,
-          height: 24,
-          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
         ),
       ),
     );

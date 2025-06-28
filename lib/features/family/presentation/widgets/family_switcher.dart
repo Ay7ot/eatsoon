@@ -57,14 +57,21 @@ class _FamilySwitcherState extends State<FamilySwitcher> {
 
             // If only one family, just display its name (no interaction)
             if (familyIds.length == 1) {
-              return Text(
-                currentFamily.name,
-                style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: Color(0xFF111827),
-                ),
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildAvatar(currentFamily.name),
+                  const SizedBox(width: 8),
+                  Text(
+                    currentFamily.name,
+                    style: const TextStyle(
+                      fontFamily: 'Nunito',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
               );
             }
 
@@ -92,6 +99,8 @@ class _FamilySwitcherState extends State<FamilySwitcher> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  _buildAvatar(currentFamily.name),
+                  const SizedBox(width: 6),
                   Text(
                     currentFamily.name,
                     style: const TextStyle(
@@ -111,6 +120,24 @@ class _FamilySwitcherState extends State<FamilySwitcher> {
       },
     );
   }
+
+  // Simple coloured avatar with first letter of name
+  Widget _buildAvatar(String name) {
+    final color = Colors.accents[name.hashCode % Colors.accents.length];
+    return CircleAvatar(
+      radius: 12,
+      backgroundColor: color.withOpacity(0.2),
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontFamily: 'Nunito',
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: color.shade700,
+        ),
+      ),
+    );
+  }
 }
 
 class _FamilySelectionSheet extends StatelessWidget {
@@ -122,6 +149,23 @@ class _FamilySelectionSheet extends StatelessWidget {
     required this.families,
     required this.currentFamilyId,
   }) : super(key: key);
+
+  Widget _buildAvatar(String name) {
+    final color = Colors.primaries[name.hashCode % Colors.primaries.length];
+    return CircleAvatar(
+      radius: 12,
+      backgroundColor: color.shade100,
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontFamily: 'Nunito',
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: color.shade700,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,11 +226,19 @@ class _FamilySelectionSheet extends StatelessWidget {
                     groupValue: currentFamilyId,
                     onChanged: (val) => Navigator.pop(context, val),
                     activeColor: const Color(0xFF10B981),
-                    title: Text(
-                      f.name,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    title: Row(
+                      children: [
+                        _buildAvatar(f.name),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            f.name,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },

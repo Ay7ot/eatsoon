@@ -453,14 +453,15 @@ class _ScanScreenState extends State<ScanScreen>
   Widget _buildScanView() {
     return Column(
       children: [
-        // Sub-header for scan
-        _buildScanSubHeader(),
-
-        // Camera Preview Section
+        // Camera Preview Section - Maximum height allocation without subheader
         Expanded(
-          flex: 10,
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: const EdgeInsets.fromLTRB(
+              16,
+              20,
+              16,
+              16,
+            ), // Added top margin to replace subheader space
             decoration: BoxDecoration(
               color: Colors.black,
               borderRadius: BorderRadius.circular(20),
@@ -478,12 +479,7 @@ class _ScanScreenState extends State<ScanScreen>
                 children: [
                   // Camera Preview - Natural aspect ratio without cropping
                   if (_isCameraInitialized)
-                    Center(
-                      child: AspectRatio(
-                        aspectRatio: _cameraController!.value.aspectRatio,
-                        child: CameraPreview(_cameraController!),
-                      ),
-                    )
+                    Positioned.fill(child: CameraPreview(_cameraController!))
                   else if (_cameraInitializationFailed)
                     Center(
                       child: Column(
@@ -610,199 +606,130 @@ class _ScanScreenState extends State<ScanScreen>
           ),
         ),
 
-        // Instructions and Action Section
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Instructions
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color:
-                      _cameraInitializationFailed
-                          ? const Color(0xFFFEF2F2)
-                          : const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color:
-                        _cameraInitializationFailed
-                            ? const Color(0xFFFECACA)
-                            : const Color(0xFFBFDBFE),
-                  ),
-                ),
-                child: Text(
-                  _instructionText,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color:
-                        _cameraInitializationFailed
-                            ? const Color(0xFFDC2626)
-                            : const Color(0xFF1E40AF),
-                    height: 1.2,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Scan Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed:
-                      (_isScanning || !_isCameraInitialized)
-                          ? null
-                          : _captureAndScan,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    disabledBackgroundColor: const Color(0xFF6B7280),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 0,
-                  ),
-                  child:
-                      _isScanning
-                          ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                          : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.camera_alt_outlined,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _scanButtonLabel,
-                                style: const TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Manual Entry Option
-              TextButton(
-                onPressed: _isScanning ? null : _handleManualEntry,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                child: const Text(
-                  'Enter product manually',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF6B7280),
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildScanSubHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
+        // Instructions and Action Section - More flexible to prevent overflow
+        SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 8, // Reduced padding
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Smart Scanner',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827),
-                    height: 1.3,
+                // Instructions
+                Flexible(
+                  // Wrap in Flexible to prevent overflow
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10), // Reduced from 12 to 10
+                    decoration: BoxDecoration(
+                      color:
+                          _cameraInitializationFailed
+                              ? const Color(0xFFFEF2F2)
+                              : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color:
+                            _cameraInitializationFailed
+                                ? const Color(0xFFFECACA)
+                                : const Color(0xFFBFDBFE),
+                      ),
+                    ),
+                    child: Text(
+                      _instructionText,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11, // Reduced from 12 to 11
+                        fontWeight: FontWeight.w400,
+                        color:
+                            _cameraInitializationFailed
+                                ? const Color(0xFFDC2626)
+                                : const Color(0xFF1E40AF),
+                        height: 1.2, // Reduced from 1.3 to 1.2
+                      ),
+                    ),
                   ),
                 ),
-                const Text(
-                  'AI-powered barcode and expiry date detection',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF6B7280),
-                    height: 1.2,
+
+                const SizedBox(height: 12), // Reduced from 16 to 12
+                // Scan Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50, // Standard button height
+                  child: ElevatedButton(
+                    onPressed:
+                        (_isScanning || !_isCameraInitialized)
+                            ? null
+                            : _captureAndScan,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      disabledBackgroundColor: const Color(0xFF6B7280),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
+                    child:
+                        _isScanning
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                            : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.camera_alt_outlined,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _scanButtonLabel,
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                  ),
+                ),
+
+                const SizedBox(height: 8), // Reduced spacing
+                // Manual Entry Option
+                TextButton(
+                  onPressed: _isScanning ? null : _handleManualEntry,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6,
+                    ), // Reduced padding
+                  ),
+                  child: const Text(
+                    'Enter product manually',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6B7280),
+                      height: 1.2,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.help_outline,
-                color: Color(0xFF4B5563),
-                size: 20,
-              ),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder:
-                      (context) => AlertDialog(
-                        title: const Text('Smart Scanner Help'),
-                        content: const Text(
-                          'Point your camera at a product label or barcode. The app will:\n\n'
-                          '• Detect barcodes and look up product information\n'
-                          '• Find expiry dates using text recognition\n'
-                          '• Allow manual entry if detection fails\n\n'
-                          'Make sure the label is well-lit and clearly visible.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Got it'),
-                          ),
-                        ],
-                      ),
-                );
-              },
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eat_soon/core/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:eat_soon/features/family/data/models/family_model.dart';
 import 'package:eat_soon/features/family/data/models/family_member_model.dart';
 import 'package:eat_soon/features/family/data/models/family_invitation_model.dart';
@@ -118,6 +117,7 @@ class FamilyService {
 
   // Get family members stream
   Stream<List<FamilyMemberModel>> getFamilyMembersStream(String familyId) {
+    if (familyId.isEmpty) return const Stream.empty();
     return _firestore.collection('familyMembers').doc(familyId).snapshots().map(
       (doc) {
         if (!doc.exists) return <FamilyMemberModel>[];
@@ -201,73 +201,79 @@ class FamilyService {
     }
   }
 
-  // Accept family invitation with enhanced error handling
+  // Accept family invitation
   Future<void> acceptInvitation(String invitationId) async {
-    int retryCount = 0;
-    const maxRetries = 3;
-
-    while (retryCount < maxRetries) {
-      try {
-        final callable = FirebaseFunctions.instanceFor(
-          region: 'us-central1',
-        ).httpsCallable('acceptFamilyInvitation');
-
-        final result = await callable.call({'invitationId': invitationId});
-        debugPrint('Invitation accepted successfully: ${result.data}');
-        return; // Success, exit the retry loop
-      } on FirebaseFunctionsException catch (e) {
-        debugPrint('FirebaseFunctionsException: ${e.code} - ${e.message}');
-
-        // Handle specific Firebase Functions errors
-        switch (e.code) {
-          case 'unauthenticated':
-            throw 'You must be signed in to accept invitations.';
-          case 'permission-denied':
-            throw 'You do not have permission to accept this invitation.';
-          case 'not-found':
-            throw 'This invitation could not be found or has expired.';
-          case 'already-exists':
-            throw 'You are already a member of this family.';
-          case 'internal':
-          case 'unknown':
-            // These might be transient Google Play Services issues
-            if (retryCount < maxRetries - 1) {
-              retryCount++;
-              debugPrint(
-                'Retrying invitation acceptance (attempt $retryCount)...',
-              );
-              await Future.delayed(Duration(seconds: retryCount * 2));
-              continue; // Retry the operation
-            }
-            throw 'A server error occurred. Please try again later.';
-          default:
-            throw 'Failed to accept invitation: ${e.message}';
-        }
-      } catch (e) {
-        debugPrint('Unexpected error accepting invitation: $e');
-
-        // Handle potential Google Play Services authentication failures
-        if (e.toString().contains('NullPointerException') ||
-            e.toString().contains('getToken') ||
-            e.toString().contains('MissingPluginException')) {
-          if (retryCount < maxRetries - 1) {
-            retryCount++;
-            debugPrint(
-              'Detected authentication issue, retrying (attempt $retryCount)...',
-            );
-            await Future.delayed(Duration(seconds: retryCount * 3));
-            continue; // Retry the operation
-          }
-
-          throw 'Unable to connect to Google services. Please ensure you have a stable internet connection and try again.';
-        }
-
-        throw 'An unexpected error occurred while accepting the invitation.';
+    try {
+      if (_currentUserId == null) {
+        throw 'No user is currently signed in.';
       }
+
+      final user = _auth.currentUser!;
+
+      // Get invitation details
+      final invitationDoc =
+          await _firestore
+              .collection('familyInvitations')
+              .doc(invitationId)
+              .get();
+
+      if (!invitationDoc.exists) {
+        throw 'Invitation not found or has expired.';
+      }
+
+      final invitation = FamilyInvitationModel.fromFirestore(invitationDoc);
+
+      // Verify invitation is for current user
+      if (invitation.inviteeEmail.toLowerCase() != user.email?.toLowerCase()) {
+        throw 'This invitation is not for your email address.';
+      }
+
+      if (invitation.status != InvitationStatus.pending) {
+        throw 'This invitation has already been ${invitation.status.name}.';
+      }
+
+      // Check if invitation has expired
+      if (invitation.expiresAt.isBefore(DateTime.now())) {
+        throw 'This invitation has expired.';
+      }
+
+      // Add user to family members
+      await _addMemberToFamily(
+        familyId: invitation.familyId,
+        userId: _currentUserId!,
+        displayName: user.displayName ?? 'User',
+        email: user.email ?? '',
+        profileImage: user.photoURL,
+        role: FamilyMemberRole.member,
+        status: FamilyMemberStatus.active,
+      );
+
+      // Update invitation status
+      await _firestore
+          .collection('familyInvitations')
+          .doc(invitationId)
+          .update({
+            'status': InvitationStatus.accepted.name,
+            'acceptedAt': FieldValue.serverTimestamp(),
+          });
+
+      // Update user's family association
+      await _updateUserFamilyAssociation(
+        _currentUserId!,
+        invitation.familyId,
+        setAsCurrent: true,
+      );
+
+      // Note: memberCount is adjusted server-side when admin manages members.
+
+      debugPrint('Invitation accepted successfully');
+    } catch (e) {
+      debugPrint('Error accepting invitation: $e');
+      throw 'Failed to accept invitation: $e';
     }
   }
 
-  // Remove member from family
+  // Remove a member from a family
   Future<void> removeMember({
     required String familyId,
     required String userId,
@@ -277,40 +283,43 @@ class FamilyService {
         throw 'No user is currently signed in.';
       }
 
-      // Check if user is admin of the family
+      // 1. Check if current user is an admin
       final members = await getFamilyMembers(familyId);
       final currentUserMember = members.firstWhere(
         (member) => member.userId == _currentUserId,
         orElse: () => throw 'You are not a member of this family.',
       );
 
-      if (!currentUserMember.isAdmin && _currentUserId != userId) {
-        throw 'Only admins can remove other members.';
+      if (!currentUserMember.isAdmin) {
+        throw 'Only admins can remove members.';
+      }
+      if (currentUserMember.userId == userId) {
+        throw 'Admins cannot remove themselves.';
       }
 
-      // Cannot remove the last admin
-      final admins = members.where((member) => member.isAdmin).toList();
-      final memberToRemove = members.firstWhere(
-        (member) => member.userId == userId,
-        orElse: () => throw 'Member not found.',
-      );
+      final batch = _firestore.batch();
 
-      if (memberToRemove.isAdmin && admins.length == 1) {
-        throw 'Cannot remove the last admin. Transfer admin role to another member first.';
-      }
+      // 2. Remove member from the familyMembers document
+      final familyMembersRef = _firestore
+          .collection('familyMembers')
+          .doc(familyId);
+      batch.update(familyMembersRef, {'members.$userId': FieldValue.delete()});
 
-      // Remove member from family
-      await _firestore.collection('familyMembers').doc(familyId).update({
-        'members.$userId': FieldValue.delete(),
+      // 3. Decrement member count in the family document
+      final familyRef = _firestore.collection('families').doc(familyId);
+      batch.update(familyRef, {
+        'statistics.memberCount': FieldValue.increment(-1),
       });
 
-      // Update user's family association
-      await _removeFamilyFromUser(userId, familyId);
+      // 4. Update the removed user's document
+      final userRef = _firestore.collection('users').doc(userId);
+      batch.update(userRef, {
+        'familyIds': FieldValue.arrayRemove([familyId]),
+        'currentFamilyId': null, // Reset their current family
+      });
 
-      // Update family member count
-      await _updateFamilyMemberCount(familyId);
-
-      debugPrint('Member removed successfully');
+      await batch.commit();
+      debugPrint('Member $userId removed successfully from family $familyId.');
     } catch (e) {
       debugPrint('Error removing member: $e');
       throw 'Failed to remove member: $e';
@@ -394,23 +403,6 @@ class FamilyService {
       await userDoc.update({
         'familyIds': FieldValue.arrayUnion([familyId]),
       });
-    }
-  }
-
-  Future<void> _removeFamilyFromUser(String userId, String familyId) async {
-    final userDoc = _firestore.collection('users').doc(userId);
-
-    await userDoc.update({
-      'familyIds': FieldValue.arrayRemove([familyId]),
-    });
-
-    // If this was the current family, clear it
-    final userSnapshot = await userDoc.get();
-    if (userSnapshot.exists) {
-      final userData = userSnapshot.data() as Map<String, dynamic>;
-      if (userData['currentFamilyId'] == familyId) {
-        await userDoc.update({'currentFamilyId': null});
-      }
     }
   }
 

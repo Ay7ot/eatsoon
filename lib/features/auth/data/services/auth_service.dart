@@ -10,7 +10,7 @@ class AuthService {
   AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   final FirebaseFirestore _firestore = FirestoreService.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 

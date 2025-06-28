@@ -6,11 +6,22 @@ service cloud.firestore {
     // Users Collection
     // - A user can only create their own user document.
     // - A user can only read and update their own document.
+    // - Family admins can update family-related fields for their family members.
     // - No one can delete user documents from the client.
     // - No one can list all users.
     match /users/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow users to read and update their own documents
       allow read, update: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow family admins to update family-related fields when removing members
+      // This is needed when an admin removes a member from a family
+      allow update: if request.auth != null &&
+        request.auth.uid != userId &&
+        // Only allow updates to family-related fields
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['familyIds', 'currentFamilyId']);
+      
       allow delete: if false;
       
       // Activities subcollection
@@ -50,6 +61,18 @@ service cloud.firestore {
         resource.data.adminUserId == request.auth.uid &&
         request.resource.data.adminUserId == request.auth.uid;
 
+      // Allow existing family members (non-admin) to bump statistics.memberCount by exactly +1 when they join.
+      allow update: if request.auth != null &&
+        // requester is already a member
+        exists(/databases/$(database)/documents/familyMembers/$(familyId)) &&
+        get(/databases/$(database)/documents/familyMembers/$(familyId)).data.members.keys().hasAny([request.auth.uid]) &&
+        // only the top-level "statistics" field may change
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statistics']) &&
+        // statistics sub-fields may not change except memberCount +1
+        request.resource.data.statistics.memberCount == resource.data.statistics.memberCount + 1 &&
+        request.resource.data.statistics.totalItems == resource.data.statistics.totalItems &&
+        request.resource.data.statistics.wasteReduced == resource.data.statistics.wasteReduced;
+
       allow delete: if false;
     }
 
@@ -70,10 +93,12 @@ service cloud.firestore {
       // - The family admin can update the entire document.
       // - An invited user can add ONLY themselves to the 'members' map with the 'member' role.
       allow update: if request.auth != null &&
-        exists(/databases/$(database)/documents/families/$(familyId)) &&
         (
           // Condition 1: Requester is the family admin.
-          get(/databases/$(database)/documents/families/$(familyId)).data.adminUserId == request.auth.uid
+          (
+        exists(/databases/$(database)/documents/families/$(familyId)) &&
+            get(/databases/$(database)/documents/families/$(familyId)).data.adminUserId == request.auth.uid
+          )
           ||
           // Condition 2: Requester is adding ONLY themselves to the family.
           (

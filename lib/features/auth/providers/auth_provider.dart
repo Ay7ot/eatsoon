@@ -238,24 +238,23 @@ class AuthProvider extends ChangeNotifier {
   /// Switch the active family for this user. Ensures Firestore is updated and
   /// local state is refreshed.
   Future<void> switchFamily(String newFamilyId) async {
-    if (_user == null) return;
+    if (_user == null || _user!.currentFamilyId == newFamilyId) return;
+
     try {
       _setLoading(true);
-
       final uid = _user!.uid;
-      final usersRef = FirebaseFirestore.instance.collection('users');
 
-      // Ensure the new familyId is present in familyIds array.
-      await usersRef.doc(uid).update({
+      // Use set with merge to ensure the doc is created if it's missing.
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'currentFamilyId': newFamilyId,
-        'familyIds': FieldValue.arrayUnion([newFamilyId]),
-      });
+      }, SetOptions(merge: true));
 
-      // Reload user data so listeners rebuild.
-      await reloadUser();
+      // Optimistically update the local state to avoid the race condition.
+      _user = _user!.copyWith(currentFamilyId: newFamilyId);
     } catch (e) {
       _setError('Failed to switch family: $e');
     } finally {
+      // Notify listeners regardless of success or failure to update the UI.
       _setLoading(false);
     }
   }
