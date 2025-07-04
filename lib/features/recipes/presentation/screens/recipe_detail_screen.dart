@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
 import 'package:eat_soon/features/recipes/data/models/recipe_model.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
@@ -43,6 +44,26 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     setState(() {
       selectedServings = (selectedServings + change).clamp(1, 12);
     });
+  }
+
+  // Helper to translate recipe category names
+  String _translateCategory(String category) {
+    final key = 'recipe_cat_${category.toLowerCase().replaceAll(' ', '_')}';
+    final translated = key.tr;
+    return translated == key ? category : translated;
+  }
+
+  // Helper to translate difficulty values (Easy/Medium/Hard)
+  String _translateDifficulty(String difficulty) {
+    final map = {
+      'easy': 'recipes_diff_easy',
+      'medium': 'recipes_diff_medium',
+      'hard': 'recipes_diff_hard',
+    };
+    final key = map[difficulty.toLowerCase()];
+    if (key == null) return difficulty;
+    final translated = key.tr;
+    return translated == key ? difficulty : translated;
   }
 
   // Fallback emojis for different ingredient categories
@@ -134,7 +155,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
             automaticallyImplyLeading: false,
             title: Text(
-              'Eatsoon',
+              'Eatsooon',
               style: GoogleFonts.nunito(
                 fontWeight: FontWeight.w600,
                 color: AppTheme.secondaryColor,
@@ -235,7 +256,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  widget.recipe.category,
+                  _translateCategory(widget.recipe.category),
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
@@ -293,7 +314,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         children: [
           _buildMetaInfo(),
           const SizedBox(height: 24),
-          _buildSectionTitle('Description'),
+          _buildSectionTitle('recipe_detail_description'.tr),
           const SizedBox(height: 8),
           Text(
             widget.recipe.description,
@@ -329,19 +350,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ],
       ),
       child: IntrinsicHeight(
-      child: Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
+          children: [
             _buildStatItem(
-              'Cook Time',
+              'recipe_detail_cook_time'.tr,
               widget.recipe.cookTime,
               Icons.timer_outlined,
               Colors.orange,
             ),
             const VerticalDivider(width: 1),
             _buildStatItem(
-              'Difficulty',
-              widget.recipe.difficulty,
+              'recipe_detail_difficulty'.tr,
+              _translateDifficulty(widget.recipe.difficulty),
               Icons.star_border_rounded,
               Colors.amber,
             ),
@@ -404,7 +425,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             Text(
               '$selectedServings',
               style: const TextStyle(
-                  fontFamily: 'Inter',
+                fontFamily: 'Inter',
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -416,10 +437,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
           ],
         ),
-        const Text(
-          'Servings',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
+        Text(
+          'recipe_detail_servings'.tr,
+          style: TextStyle(
+            fontFamily: 'Inter',
             color: Colors.grey,
             fontSize: 12,
           ),
@@ -433,7 +454,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Ingredients'),
+        _buildSectionTitle('recipe_detail_ingredients'.tr),
         const SizedBox(height: 16),
         ...ingredients.map(
           (ing) => _buildIngredientItem(
@@ -453,31 +474,31 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       elevation: 0.5,
       child: Padding(
         padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
+        child: Row(
+          children: [
             Text(emoji, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: 16),
             Expanded(
-                          child: Text(
+              child: Text(
                 name,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
+                style: const TextStyle(
+                  fontFamily: 'Inter',
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                            Text(
+                ),
+              ),
+            ),
+            Text(
               amount,
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 14,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
                 color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+            ),
+          ],
         ),
+      ),
     );
   }
 
@@ -486,10 +507,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Instructions'),
+        _buildSectionTitle('recipe_detail_instructions'.tr),
         const SizedBox(height: 16),
-        if (instructions.isEmpty)
-          const Text('No instructions available for this recipe.'),
+        if (instructions.isEmpty) Text('recipe_detail_no_instructions'.tr),
         ...instructions.asMap().entries.map(
           (e) => _buildInstructionItem(e.key + 1, e.value),
         ),

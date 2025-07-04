@@ -4,6 +4,7 @@ import 'package:eat_soon/features/inventory/data/services/inventory_service.dart
 import 'package:eat_soon/features/home/models/food_item.dart';
 import 'package:eat_soon/features/inventory/presentation/screens/edit_item_screen.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:get/get.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -13,7 +14,21 @@ class InventoryScreen extends StatefulWidget {
 }
 
 class _InventoryScreenState extends State<InventoryScreen> {
-  String selectedFilter = 'All Items';
+  // Filter keys
+  static const String _filterAll = 'all';
+  static const String _filterSoon = 'soon';
+  static const String _filterToday = 'today';
+  static const String _filterExpired = 'expired';
+
+  // Map filter key -> translation key
+  static const Map<String, String> _filterLabelKeys = {
+    _filterAll: 'inventory_tab_all',
+    _filterSoon: 'inventory_tab_expiring_soon',
+    _filterToday: 'inventory_tab_expires_today',
+    _filterExpired: 'inventory_tab_expired',
+  };
+
+  String selectedFilter = _filterAll;
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
   String sortBy = 'expiration'; // 'expiration', 'name', 'category'
@@ -129,7 +144,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     // Apply expiration status filter from tabs
     switch (selectedFilter) {
-      case 'Expiring Soon':
+      case _filterSoon:
         filtered =
             filtered.where((item) {
               final expirationDay = _dateOnly(item.expirationDate);
@@ -138,21 +153,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
               return daysUntilExpiration > 0 && daysUntilExpiration <= 3;
             }).toList();
         break;
-      case 'Expires Today':
+      case _filterToday:
         filtered =
             filtered.where((item) {
               final expirationDay = _dateOnly(item.expirationDate);
               return expirationDay.isAtSameMomentAs(today);
             }).toList();
         break;
-      case 'Expired':
+      case _filterExpired:
         filtered =
             filtered.where((item) {
               final expirationDay = _dateOnly(item.expirationDate);
               return expirationDay.isBefore(today);
             }).toList();
         break;
-      case 'All Items':
+      case _filterAll:
       default:
         // No additional filtering needed
         break;
@@ -254,9 +269,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   const SizedBox(height: 20),
 
                   // Title
-                  const Text(
-                    'Delete Item',
-                    style: TextStyle(
+                  Text(
+                    'inventory_delete_item'.tr,
+                    style: const TextStyle(
                       fontFamily: 'Nunito',
                       fontWeight: FontWeight.w700,
                       fontSize: 20,
@@ -268,7 +283,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
                   // Content
                   Text(
-                    'Are you sure you want to delete "${item.name}"? This action cannot be undone.',
+                    'inventory_delete_confirm'.trArgs([item.name]),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontFamily: 'Inter',
@@ -296,9 +311,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               ),
                             ),
                           ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
+                          child: Text(
+                            'inventory_cancel'.tr,
+                            style: const TextStyle(
                               fontFamily: 'Inter',
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
@@ -318,7 +333,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      '${item.name} deleted successfully',
+                                      'inventory_delete_success'.trArgs([
+                                        item.name,
+                                      ]),
                                     ),
                                     backgroundColor: Colors.green,
                                   ),
@@ -328,7 +345,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Error deleting item: $e'),
+                                    content: Text(
+                                      'inventory_delete_error'.trArgs([
+                                        e.toString(),
+                                      ]),
+                                    ),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
@@ -344,9 +365,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Delete',
-                            style: TextStyle(
+                          child: Text(
+                            'inventory_delete'.tr,
+                            style: const TextStyle(
                               fontFamily: 'Inter',
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
@@ -389,7 +410,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.edit, color: Color(0xFF6B7280)),
-                title: const Text('Edit Item'),
+                title: Text('inventory_edit_item'.tr),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -402,7 +423,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete Item'),
+                title: Text('inventory_delete_item'.tr),
                 onTap: () {
                   Navigator.pop(context);
                   _showDeleteConfirmation(item);
@@ -440,9 +461,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Filter by Category',
-                    style: TextStyle(
+                  Text(
+                    'inventory_filter_by_category'.tr,
+                    style: const TextStyle(
                       fontFamily: 'Nunito',
                       fontWeight: FontWeight.w600,
                       fontSize: 18,
@@ -451,11 +472,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   const SizedBox(height: 10),
                   if (categories.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Text(
-                        'No categories available',
-                        style: TextStyle(
+                        'inventory_no_categories'.tr,
+                        style: const TextStyle(
                           color: Color(0xFF9CA3AF),
                           fontSize: 14,
                         ),
@@ -468,7 +489,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         children:
                             categories.map((category) {
                               return CheckboxListTile(
-                                title: Text(category),
+                                title: Text(_translateOption(category)),
                                 value: tempSelectedCategories.contains(
                                   category,
                                 ),
@@ -500,7 +521,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             foregroundColor: const Color(0xFF374151),
                             side: const BorderSide(color: Color(0xFFE5E7EB)),
                           ),
-                          child: const Text('Reset'),
+                          child: Text('inventory_reset'.tr),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -516,7 +537,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             backgroundColor: const Color(0xFF10B981),
                             foregroundColor: Colors.white,
                           ),
-                          child: const Text('Apply'),
+                          child: Text('inventory_apply'.tr),
                         ),
                       ),
                     ],
@@ -545,9 +566,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Sort by',
-                style: TextStyle(
+              Text(
+                'inventory_sort_by'.tr,
+                style: const TextStyle(
                   fontFamily: 'Nunito',
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
@@ -556,12 +577,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
               const SizedBox(height: 20),
               _buildSortOption(
-                'Expiration Date',
+                'inventory_sort_expiration'.tr,
                 'expiration',
                 Icons.access_time_rounded,
               ),
-              _buildSortOption('Name', 'name', Icons.sort_by_alpha_rounded),
-              _buildSortOption('Category', 'category', Icons.category_rounded),
+              _buildSortOption(
+                'inventory_sort_name'.tr,
+                'name',
+                Icons.sort_by_alpha_rounded,
+              ),
+              _buildSortOption(
+                'inventory_sort_category'.tr,
+                'category',
+                Icons.category_rounded,
+              ),
               const SizedBox(height: 20),
             ],
           ),
@@ -599,11 +628,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
+  // Helper to translate fixed option values (categories, units, storage)
+  String _translateOption(String raw) {
+    final slug = raw.toLowerCase().replaceAll(RegExp('[^a-z]'), '');
+    // Ordered prefixes to check
+    const prefixes = ['cat_', 'unit_', 'store_'];
+    for (final p in prefixes) {
+      final key = p + slug;
+      final translated = key.tr;
+      if (translated != key) return translated; // found match
+    }
+    return raw; // fallback to original
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
-      appBar: const CustomAppBar(title: 'Eatsoon'),
+      appBar: const CustomAppBar(title: 'Eatsooon'),
       body: StreamBuilder<List<FoodItem>>(
         stream: _itemsStream,
         builder: (context, snapshot) {
@@ -622,9 +664,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     color: Color(0xFFEF4444),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Error loading inventory',
-                    style: TextStyle(
+                  Text(
+                    'inventory_error_loading'.tr,
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
@@ -651,7 +693,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Retry'),
+                    child: Text('inventory_retry'.tr),
                   ),
                 ],
               ),
@@ -686,9 +728,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Inventory',
-                        style: TextStyle(
+                      Text(
+                        'inventory_title'.tr,
+                        style: const TextStyle(
                           fontFamily: 'Nunito',
                           fontWeight: FontWeight.w600,
                           fontSize: 18,
@@ -782,7 +824,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
                       // Results info
                       if (searchQuery.isNotEmpty ||
-                          selectedFilter != 'All Items' ||
+                          selectedFilter != _filterAll ||
                           selectedCategories.isNotEmpty)
                         _buildResultsInfo(filteredItems.length),
 
@@ -804,13 +846,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
     List<String> activeFilters = [];
 
     if (searchQuery.isNotEmpty) {
-      activeFilters.add('for "$searchQuery"');
+      activeFilters.add('inventory_for_query'.trArgs([searchQuery]));
     }
     if (selectedCategories.isNotEmpty) {
-      activeFilters.add('in ${selectedCategories.length} categories');
+      activeFilters.add(
+        'inventory_in_categories'.trArgs([
+          selectedCategories.length.toString(),
+        ]),
+      );
     }
-    if (selectedFilter != 'All Items') {
-      activeFilters.add('in $selectedFilter');
+    if (selectedFilter != _filterAll) {
+      activeFilters.add(
+        'inventory_in_filter'.trArgs([_filterLabelKeys[selectedFilter]!.tr]),
+      );
     }
 
     if (activeFilters.isNotEmpty) {
@@ -819,7 +867,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     final hasActiveFilters =
         searchQuery.isNotEmpty ||
-        selectedFilter != 'All Items' ||
+        selectedFilter != _filterAll ||
         selectedCategories.isNotEmpty;
 
     return Container(
@@ -843,13 +891,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
               onTap: () {
                 setState(() {
                   searchQuery = '';
-                  selectedFilter = 'All Items';
+                  selectedFilter = _filterAll;
                   selectedCategories.clear();
                   _searchController.clear();
                 });
               },
-              child: const Text(
-                'Clear all',
+              child: Text(
+                'inventory_clear_all'.tr,
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w500,
@@ -874,7 +922,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             iconBgColor: const Color(0xFFFEE2E2),
             value: '${stats['expiring']}',
             valueColor: const Color(0xFFEF4444),
-            label: 'Expiring',
+            label: 'inventory_expiring'.tr,
           ),
         ),
         const SizedBox(width: 16),
@@ -885,7 +933,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             iconBgColor: const Color(0xFFFEF3C7),
             value: '${stats['today']}',
             valueColor: const Color(0xFFF59E0B),
-            label: 'Today',
+            label: 'inventory_today'.tr,
           ),
         ),
         const SizedBox(width: 16),
@@ -896,7 +944,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             iconBgColor: const Color(0xFFD1FAE5),
             value: '${stats['total']}',
             valueColor: const Color(0xFF10B981),
-            label: 'Total',
+            label: 'inventory_total'.tr,
           ),
         ),
       ],
@@ -996,7 +1044,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildFilterTabs() {
-    final filters = ['All Items', 'Expiring Soon', 'Expires Today', 'Expired'];
+    final filters = [_filterAll, _filterSoon, _filterToday, _filterExpired];
 
     return SizedBox(
       height: 44,
@@ -1039,7 +1087,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ],
                 ),
                 child: Text(
-                  filter,
+                  _filterLabelKeys[filter]!.tr,
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
@@ -1073,7 +1121,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Search products...',
+          hintText: 'inventory_search_hint'.tr,
           hintStyle: const TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.w400,
@@ -1111,14 +1159,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Widget _buildInventoryList(List<FoodItem> items) {
     if (items.isEmpty) {
-      String title = 'No items in inventory';
-      String subtitle = 'Start by scanning your first product';
+      String title = 'inventory_no_items'.tr;
+      String subtitle = 'inventory_start_scanning'.tr;
 
       if (searchQuery.isNotEmpty ||
-          selectedFilter != 'All Items' ||
+          selectedFilter != _filterAll ||
           selectedCategories.isNotEmpty) {
-        title = 'No items found';
-        subtitle = 'Try adjusting your search or filters';
+        title = 'inventory_no_items_found'.tr;
+        subtitle = 'inventory_adjust_search_filters'.tr;
       }
 
       return Container(
@@ -1257,7 +1305,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${item.category} • ${item.quantity} ${item.unit}',
+                    '${_translateOption(item.category)} • ${item.quantity} ${_translateOption(item.unit)}',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w400,

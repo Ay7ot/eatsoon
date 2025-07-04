@@ -1,7 +1,9 @@
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/auth/presentation/screens/signup_screen.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/custom_textfield.dart';
+import 'package:eat_soon/features/auth/presentation/widgets/forgot_password_dialog.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
+import 'package:get/get.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -65,20 +67,20 @@ class _LoginScreenState extends State<LoginScreen>
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter your email';
+      return 'login_email_required'.tr;
     }
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Please enter a valid email';
+      return 'login_email_invalid'.tr;
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter your password';
+      return 'login_password_required'.tr;
     }
     if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return 'login_password_short'.tr;
     }
     return null;
   }
@@ -93,10 +95,21 @@ class _LoginScreenState extends State<LoginScreen>
       );
 
       if (success) {
-        // Don't manually navigate - let AuthWrapper handle it automatically
-        // The AuthProvider state change will trigger AuthWrapper to show AppShell
+        // Show success SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('login_success'.tr),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+
+        // AuthWrapper will navigate automatically after state change.
       } else {
-        final errorMessage = authProvider.errorMessage ?? 'Login failed';
+        final errorMessage = authProvider.errorMessage ?? 'login_failed'.tr;
         debugPrint('Login Error: $errorMessage');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -118,8 +131,17 @@ class _LoginScreenState extends State<LoginScreen>
     final success = await authProvider.signInWithGoogle();
 
     if (success) {
-      // Don't manually navigate - let AuthWrapper handle it automatically
-      // The AuthProvider state change will trigger AuthWrapper to show AppShell
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('login_success'.tr),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      // AuthWrapper handles navigation
     } else if (authProvider.errorMessage != null) {
       final errorMessage = authProvider.errorMessage!;
       debugPrint('Google Sign-In Error: $errorMessage');
@@ -137,76 +159,9 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _showForgotPasswordDialog() {
-    final emailController = TextEditingController();
-
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Reset Password'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Enter your email address to receive a password reset link.',
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            Consumer<AuthProvider>(
-              builder: (context, authProvider, child) {
-                return ElevatedButton(
-                  onPressed:
-                      authProvider.isLoading
-                          ? null
-                          : () async {
-                            final email = emailController.text.trim();
-                            if (email.isNotEmpty) {
-                              final success = await authProvider
-                                  .sendPasswordResetEmail(email);
-                              Navigator.of(context).pop();
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    success
-                                        ? 'Password reset email sent!'
-                                        : authProvider.errorMessage ??
-                                            'Failed to send reset email',
-                                  ),
-                                  backgroundColor:
-                                      success ? Colors.green : Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                  child:
-                      authProvider.isLoading
-                          ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Text('Send'),
-                );
-              },
-            ),
-          ],
-        );
-      },
+      builder: (_) => ForgotPasswordDialog(rootContext: context),
     );
   }
 
@@ -230,15 +185,15 @@ class _LoginScreenState extends State<LoginScreen>
                     child: Image.asset('assets/images/logo.png', height: 100),
                   ),
                   const SizedBox(height: 40),
-                  Text('Welcome to Eatsoon!', style: AppTheme.headingStyle),
+                  Text('login_welcome_title'.tr, style: AppTheme.headingStyle),
                   const SizedBox(height: 8),
                   Text(
-                    'Hello there, Log in to continue!',
+                    'login_welcome_subtitle'.tr,
                     style: AppTheme.captionStyle,
                   ),
                   const SizedBox(height: 30),
                   CustomTextField(
-                    hintText: 'Enter Email',
+                    hintText: 'login_email_hint'.tr,
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     validator: _validateEmail,
@@ -246,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                   const SizedBox(height: 20),
                   CustomTextField(
-                    hintText: 'Enter password',
+                    hintText: 'login_password_hint'.tr,
                     controller: _passwordController,
                     isPassword: !_isPasswordVisible,
                     focusNode: _passwordFocusNode,
@@ -265,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen>
                     child: TextButton(
                       onPressed: _showForgotPasswordDialog,
                       child: Text(
-                        'Forget Password?',
+                        'login_forget_password'.tr,
                         style: AppTheme.bodyStyle.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
@@ -291,9 +246,9 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                   ),
                                 )
-                                : const Text(
-                                  'Continue',
-                                  style: TextStyle(
+                                : Text(
+                                  'login_continue'.tr,
+                                  style: const TextStyle(
                                     fontSize: 18,
                                     color: Colors.white,
                                     fontFamily: 'Inter',
@@ -310,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen>
                       height: 24,
                     ),
                     label: Text(
-                      'Continue with Google',
+                      'login_continue_google'.tr,
                       style: AppTheme.bodyStyle,
                     ),
                     style: AppTheme.secondaryButtonStyle,
@@ -320,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen>
                     alignment: WrapAlignment.center,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text("Don't have an account?", style: AppTheme.bodyStyle),
+                      Text('login_no_account'.tr, style: AppTheme.bodyStyle),
                       TextButton(
                         onPressed:
                             () => Navigator.of(context).push(
@@ -352,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             ),
                         child: Text(
-                          'Sign up',
+                          'login_signup'.tr,
                           style: AppTheme.bodyStyle.copyWith(
                             fontWeight: FontWeight.bold,
                             color: AppTheme.secondaryColor,

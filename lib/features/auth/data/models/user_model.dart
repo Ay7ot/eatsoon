@@ -6,6 +6,9 @@ class UserModel {
   final String email;
   final String? photoURL;
 
+  /// Optional user bio/about text.
+  final String? bio;
+
   /// IDs of all families the user belongs to.
   final List<String> familyIds;
 
@@ -20,6 +23,7 @@ class UserModel {
     required this.name,
     required this.email,
     this.photoURL,
+    this.bio,
     List<String>? familyIds,
     this.currentFamilyId,
     this.createdAt,
@@ -32,12 +36,14 @@ class UserModel {
     required String name,
     required String email,
     String? photoURL,
+    String? bio,
   }) {
     return UserModel(
       uid: uid,
       name: name,
       email: email,
       photoURL: photoURL,
+      bio: bio,
       familyIds: const [],
       currentFamilyId: null,
       createdAt: DateTime.now(),
@@ -53,6 +59,7 @@ class UserModel {
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       photoURL: data['photoURL'],
+      bio: data['bio'],
       familyIds: List<String>.from(data['familyIds'] ?? const []),
       currentFamilyId: data['currentFamilyId'] ?? data['familyId'],
       createdAt: data['createdAt']?.toDate(),
@@ -67,6 +74,7 @@ class UserModel {
       'name': name,
       'email': email,
       'photoURL': photoURL,
+      'bio': bio,
       'familyIds': familyIds,
       'currentFamilyId': currentFamilyId,
       'createdAt':
@@ -86,6 +94,7 @@ class UserModel {
     String? name,
     String? email,
     String? photoURL,
+    String? bio,
     List<String>? familyIds,
     String? currentFamilyId,
     DateTime? createdAt,
@@ -96,6 +105,7 @@ class UserModel {
       name: name ?? this.name,
       email: email ?? this.email,
       photoURL: photoURL ?? this.photoURL,
+      bio: bio ?? this.bio,
       familyIds: familyIds ?? this.familyIds,
       currentFamilyId: currentFamilyId ?? this.currentFamilyId,
       createdAt: createdAt ?? this.createdAt,

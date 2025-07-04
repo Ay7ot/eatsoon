@@ -6,10 +6,12 @@ import 'package:eat_soon/features/profile/presentation/screens/edit_profile_scre
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:eat_soon/features/home/models/activity_model.dart';
-import 'package:eat_soon/features/notifications/presentation/screens/notifications_screen.dart';
+
 import 'package:eat_soon/features/family/presentation/screens/family_members_screen.dart';
 import 'package:eat_soon/features/family/presentation/widgets/family_switcher.dart';
 import 'package:eat_soon/shared/widgets/recent_activity.dart';
+import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -18,7 +20,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: const CustomAppBar(title: 'Profile'),
+      appBar: CustomAppBar(title: 'Eatsooon'),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           final user = authProvider.user;
@@ -34,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
                 _buildQuickActionsSection(context),
                 const SizedBox(height: 32),
                 RecentActivity(
-                  title: 'Recent Activity',
+                  title: 'profile_recent_activity'.tr,
                   stream: ActivityService().getActivitiesStream(limit: 5),
                   showDateGroups: true,
                   onViewAll: () {
@@ -166,21 +168,21 @@ class ProfileScreen extends StatelessWidget {
                   Expanded(
                     child: _buildStatColumn(
                       '$itemsAdded',
-                      'Items\nAdded',
+                      'profile_items_added'.tr,
                       AppTheme.secondaryColor,
                     ),
                   ),
                   Expanded(
                     child: _buildStatColumn(
                       '$recipesViewed',
-                      'Recipes\nViewed',
+                      'profile_recipes_viewed'.tr,
                       AppTheme.primaryColor,
                     ),
                   ),
                   Expanded(
                     child: _buildStatColumn(
                       '$daysActive',
-                      'Days\nActive',
+                      'profile_days_active'.tr,
                       const Color(0xFFF59E0B),
                     ),
                   ),
@@ -229,9 +231,9 @@ class ProfileScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Quick Actions',
-              style: TextStyle(
+            Text(
+              'profile_quick_actions'.tr,
+              style: const TextStyle(
                 fontFamily: 'Nunito',
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
@@ -245,9 +247,9 @@ class ProfileScreen extends StatelessWidget {
                 color: AppTheme.secondaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                '3 available',
-                style: TextStyle(
+              child: Text(
+                'profile_actions_available'.tr,
+                style: const TextStyle(
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w500,
                   fontSize: 12,
@@ -262,8 +264,8 @@ class ProfileScreen extends StatelessWidget {
         // Primary Action - Edit Profile (Full Width)
         _buildPrimaryActionButton(
           context,
-          'Edit Profile',
-          'Update your personal information and preferences',
+          'profile_edit_profile'.tr,
+          'profile_edit_profile_subtitle'.tr,
           Icons.person_outline_rounded,
           AppTheme.primaryColor,
           () {
@@ -276,43 +278,19 @@ class ProfileScreen extends StatelessWidget {
           },
         ),
         const SizedBox(height: 12),
-        // Secondary Actions Grid
-        Row(
-          children: [
-            Expanded(
-              child: _buildSecondaryActionButton(
-                'Notifications',
-                'Manage alerts',
-                Icons.notifications_none_rounded,
-                const Color(0xFF10B981),
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationsScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildSecondaryActionButton(
-                'Family',
-                'Manage family',
-                Icons.groups_outlined,
-                const Color(0xFF10B981),
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const FamilyMembersScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+        // Primary Action - Family (Full Width, styled like Edit Profile)
+        _buildPrimaryActionButton(
+          context,
+          'profile_family'.tr,
+          'profile_family_subtitle'.tr,
+          Icons.groups_outlined,
+          const Color(0xFF10B981),
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FamilyMembersScreen()),
+            );
+          },
         ),
       ],
     );
@@ -409,80 +387,13 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSecondaryActionButton(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: const Color(0xFF111827),
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 12,
-                  color: const Color(0xFF6B7280),
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildAccountSection(BuildContext context, AuthProvider authProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Account',
-          style: TextStyle(
+        Text(
+          'profile_account'.tr,
+          style: const TextStyle(
             fontFamily: 'Nunito',
             fontWeight: FontWeight.w600,
             fontSize: 18,
@@ -506,9 +417,16 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             children: [
               _buildAccountItem(
+                Icons.language_rounded,
+                'language'.tr,
+                'change_language'.tr,
+                const Color(0xFF3B82F6),
+                () => _showLanguageDialog(context),
+              ),
+              _buildAccountItem(
                 Icons.logout_rounded,
-                'Logout',
-                'Sign out of your account',
+                'profile_sign_out'.tr,
+                'profile_sign_out_subtitle'.tr,
                 const Color(0xFFEF4444),
                 () async {
                   final shouldLogout = await showDialog<bool>(
@@ -556,9 +474,9 @@ class ProfileScreen extends StatelessWidget {
                                 const SizedBox(height: 20),
 
                                 // Title
-                                const Text(
-                                  'Sign Out',
-                                  style: TextStyle(
+                                Text(
+                                  'profile_sign_out_confirm_title'.tr,
+                                  style: const TextStyle(
                                     fontFamily: 'Nunito',
                                     fontWeight: FontWeight.w700,
                                     fontSize: 20,
@@ -569,10 +487,10 @@ class ProfileScreen extends StatelessWidget {
                                 const SizedBox(height: 8),
 
                                 // Content
-                                const Text(
-                                  'Are you sure you want to sign out of your account? You\'ll need to sign in again to access your data.',
+                                Text(
+                                  'profile_sign_out_confirm_message'.tr,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontFamily: 'Inter',
                                     fontWeight: FontWeight.w400,
                                     fontSize: 16,
@@ -605,9 +523,9 @@ class ProfileScreen extends StatelessWidget {
                                             ),
                                           ),
                                         ),
-                                        child: const Text(
-                                          'Cancel',
-                                          style: TextStyle(
+                                        child: Text(
+                                          'profile_cancel'.tr,
+                                          style: const TextStyle(
                                             fontFamily: 'Inter',
                                             fontWeight: FontWeight.w600,
                                             fontSize: 16,
@@ -637,9 +555,9 @@ class ProfileScreen extends StatelessWidget {
                                           ),
                                           elevation: 0,
                                         ),
-                                        child: const Text(
-                                          'Sign Out',
-                                          style: TextStyle(
+                                        child: Text(
+                                          'profile_sign_out'.tr,
+                                          style: const TextStyle(
                                             fontFamily: 'Inter',
                                             fontWeight: FontWeight.w600,
                                             fontSize: 16,
@@ -739,5 +657,66 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showLanguageDialog(BuildContext context) async {
+    final Locale? selectedLocale = await showModalBottomSheet<Locale>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final current = Get.locale ?? const Locale('en', 'US');
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(
+                  'language'.tr,
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              RadioListTile<Locale>(
+                value: const Locale('en', 'US'),
+                groupValue: current,
+                onChanged: (val) => Navigator.pop(context, val),
+                title: Text('english'.tr),
+              ),
+              RadioListTile<Locale>(
+                value: const Locale('es', 'ES'),
+                groupValue: current,
+                onChanged: (val) => Navigator.pop(context, val),
+                title: Text('spanish'.tr),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selectedLocale != null && selectedLocale != Get.locale) {
+      Get.updateLocale(selectedLocale);
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString(
+        'locale',
+        '${selectedLocale.languageCode}_${selectedLocale.countryCode ?? ''}',
+      );
+    }
   }
 }

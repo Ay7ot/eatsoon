@@ -42,6 +42,7 @@ class AuthProvider extends ChangeNotifier {
         name: user.displayName ?? userData?['name'] ?? 'User',
         email: user.email ?? '',
         photoURL: user.photoURL ?? userData?['photoURL'],
+        bio: userData?['bio'],
         familyIds: List<String>.from(userData?['familyIds'] ?? const []),
         currentFamilyId: userData?['currentFamilyId'] ?? userData?['familyId'],
         createdAt: (userData?['createdAt'] as Timestamp?)?.toDate(),
@@ -169,16 +170,16 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Update user profile
-  Future<bool> updateProfile({required String name}) async {
+  Future<bool> updateProfile({required String name, String? bio}) async {
     try {
       _setLoading(true);
       _setError(null);
 
-      await _authService.updateUserProfile(name: name);
+      await _authService.updateUserProfile(name: name, bio: bio);
 
       // Update local user model
       if (_user != null) {
-        _user = _user!.copyWith(name: name);
+        _user = _user!.copyWith(name: name, bio: bio);
         notifyListeners();
       }
 

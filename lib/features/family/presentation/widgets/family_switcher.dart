@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:eat_soon/features/family/data/models/family_model.dart';
 import 'package:eat_soon/features/family/data/services/family_service.dart';
@@ -192,9 +193,9 @@ class _FamilySelectionSheet extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             // Header
-            const Text(
-              'Choose a Family',
-              style: TextStyle(
+            Text(
+              'family_switcher_choose_family'.tr,
+              style: const TextStyle(
                 fontFamily: 'Nunito',
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
@@ -202,9 +203,9 @@ class _FamilySelectionSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Switch between the families you belong to.',
-              style: TextStyle(
+            Text(
+              'family_switcher_switch_desc'.tr,
+              style: const TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 14,
                 color: Color(0xFF6B7280),

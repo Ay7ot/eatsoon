@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
 
 enum ActivityType {
   itemAdded,
@@ -122,6 +123,49 @@ class ActivityModel {
         return 0xFF10B981; // Green
       case ActivityType.inventoryCleared:
         return 0xFF6B7280; // Gray
+    }
+  }
+
+  // Localised title using translation keys
+  String get i18nTitle {
+    switch (type) {
+      case ActivityType.itemAdded:
+        return 'act_item_added_title'.trArgs([metadata['itemName'] ?? '']);
+      case ActivityType.itemDeleted:
+        return 'act_item_deleted_title'.trArgs([metadata['itemName'] ?? '']);
+      case ActivityType.itemUpdated:
+        return 'act_item_updated_title'.trArgs([metadata['itemName'] ?? '']);
+      case ActivityType.recipeViewed:
+        return 'act_recipe_viewed_title'.trArgs([metadata['recipeName'] ?? '']);
+      case ActivityType.recipeFavorited:
+        return 'act_recipe_favorited_title'.trArgs([
+          metadata['recipeName'] ?? '',
+        ]);
+      case ActivityType.scanPerformed:
+        return 'act_scan_performed_title'.tr;
+      case ActivityType.inventoryCleared:
+        return 'act_inventory_cleared_title'.trArgs([
+          metadata['itemCount']?.toString() ?? '0',
+        ]);
+    }
+  }
+
+  String get i18nSubtitle {
+    switch (type) {
+      case ActivityType.itemAdded:
+        return 'act_item_added_sub'.tr;
+      case ActivityType.itemDeleted:
+        return 'act_item_deleted_sub'.tr;
+      case ActivityType.itemUpdated:
+        return 'act_item_updated_sub'.tr;
+      case ActivityType.recipeViewed:
+        return 'act_recipe_viewed_sub'.tr;
+      case ActivityType.recipeFavorited:
+        return 'act_recipe_favorited_sub'.tr;
+      case ActivityType.scanPerformed:
+        return 'act_scan_performed_sub'.tr;
+      case ActivityType.inventoryCleared:
+        return 'act_inventory_cleared_sub'.tr;
     }
   }
 }

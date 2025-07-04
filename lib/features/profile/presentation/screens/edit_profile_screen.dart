@@ -6,6 +6,7 @@ import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -28,7 +29,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = context.read<AuthProvider>().user;
     _nameController = TextEditingController(text: user?.name ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
-    _bioController = TextEditingController(text: '');
+    _bioController = TextEditingController(text: user?.bio ?? '');
   }
 
   @override
@@ -64,7 +65,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             automaticallyImplyLeading: false,
             title: Text(
-              'Eatsoon',
+              'Eatsooon',
               style: GoogleFonts.nunito(
                 fontWeight: FontWeight.w600,
                 color: AppTheme.secondaryColor,
@@ -119,10 +120,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 24),
-
-                      // Profile Photo Section
-                      _buildProfilePhotoSection(),
-                      const SizedBox(height: 32),
 
                       // Personal Information Section
                       _buildPersonalInfoSection(),
@@ -180,9 +177,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Edit Profile',
-                  style: TextStyle(
+                Text(
+                  'edit_profile_title'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -190,121 +187,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     height: 1.3,
                   ),
                 ),
-                const Text(
-                  'Update your personal information',
-                  style: TextStyle(
+                Text(
+                  'edit_profile_subtitle'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: Color(0xFF6B7280),
                     height: 1.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfilePhotoSection() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Profile Photo',
-            style: TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF111827),
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Column(
-              children: [
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    final user = authProvider.user;
-                    return Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.secondaryColor,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child:
-                          user?.photoURL != null
-                              ? ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
-                                child: Image.network(
-                                  user!.photoURL!,
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.person_rounded,
-                                      size: 50,
-                                      color: Colors.white,
-                                    );
-                                  },
-                                ),
-                              )
-                              : const Icon(
-                                Icons.person_rounded,
-                                size: 50,
-                                color: Colors.white,
-                              ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Photo upload coming soon!'),
-                        backgroundColor: AppTheme.primaryColor,
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.camera_alt_outlined,
-                    size: 20,
-                    color: AppTheme.primaryColor,
-                  ),
-                  label: const Text(
-                    'Change Photo',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.primaryColor,
-                    ),
                   ),
                 ),
               ],
@@ -332,9 +222,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Personal Information',
-            style: TextStyle(
+          Text(
+            'edit_profile_personal_info'.tr,
+            style: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -344,12 +234,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(height: 20),
           _buildFormField(
-            label: 'Full Name',
+            label: 'edit_profile_full_name'.tr,
             controller: _nameController,
             icon: Icons.person_outline,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your full name';
+                return 'edit_profile_name_required'.tr;
               }
               return null;
             },
@@ -376,9 +266,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Contact Information',
-            style: TextStyle(
+          Text(
+            'edit_profile_contact_info'.tr,
+            style: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -388,19 +278,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(height: 20),
           _buildFormField(
-            label: 'Email Address',
+            label: 'edit_profile_email_address'.tr,
             controller: _emailController,
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
             enabled: false, // Email usually shouldn't be editable
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your email address';
+                return 'edit_profile_email_required'.tr;
               }
               if (!RegExp(
                 r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
               ).hasMatch(value)) {
-                return 'Please enter a valid email address';
+                return 'edit_profile_email_invalid'.tr;
               }
               return null;
             },
@@ -427,9 +317,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'About',
-            style: TextStyle(
+          Text(
+            'edit_profile_about'.tr,
+            style: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -439,12 +329,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(height: 20),
           _buildFormField(
-            label: 'Bio (Optional)',
+            label: 'edit_profile_bio_optional'.tr,
             controller: _bioController,
             icon: Icons.edit_outlined,
             maxLines: 4,
-            hint:
-                'Tell us a bit about yourself and your food waste reduction goals...',
+            hint: 'edit_profile_bio_hint'.tr,
           ),
         ],
       ),
@@ -525,77 +414,81 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Column(
+    return Row(
       children: [
-        // Save Changes Button
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _saveChanges,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        // Cancel Button
+        Expanded(
+          child: SizedBox(
+            height: 56,
+            child: OutlinedButton(
+              onPressed: _isLoading ? null : () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFD1D5DB)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-              elevation: 0,
+              child: Text(
+                'edit_profile_cancel'.tr,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF374151),
+                  height: 1.2,
+                ),
+              ),
             ),
-            child:
-                _isLoading
-                    ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                    : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.save_outlined,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(width: 12),
 
-        // Cancel Button
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: OutlinedButton(
-            onPressed: _isLoading ? null : () => Navigator.pop(context),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFD1D5DB)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        // Save Changes Button
+        Expanded(
+          child: SizedBox(
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _saveChanges,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
               ),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF374151),
-                height: 1.2,
-              ),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                      : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.save_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'edit_profile_save_changes'.tr,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
             ),
           ),
         ),
@@ -615,13 +508,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final authProvider = context.read<AuthProvider>();
 
-      // Update the user profile
-      await authProvider.updateProfile(name: _nameController.text.trim());
+      // Update the user profile including bio
+      await authProvider.updateProfile(
+        name: _nameController.text.trim(),
+        bio: _bioController.text.trim(),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully!'),
+          SnackBar(
+            content: Text('edit_profile_updated_success'.tr),
             backgroundColor: AppTheme.secondaryColor,
             behavior: SnackBarBehavior.floating,
           ),
@@ -632,7 +528,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error updating profile: $e'),
+            content: Text('edit_profile_update_error'.tr + e.toString()),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

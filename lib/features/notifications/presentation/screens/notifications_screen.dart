@@ -17,7 +17,8 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final AlertService _alertService = AlertService();
-  final FlutterLocalNotificationsPlugin _fln = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _fln =
+      FlutterLocalNotificationsPlugin();
 
   String _selectedFilter = 'All';
 
@@ -66,33 +67,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             children: [
               _buildSubHeader(allNotifications.isNotEmpty),
               Expanded(
-                child: allNotifications.isEmpty
-                    ? _buildEmptyState()
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            _buildStatsCards(allNotifications),
-                            const SizedBox(height: 24),
-                            _buildSmartAlertsCard(),
-                            const SizedBox(height: 24),
-                            _buildFilterTabs(allNotifications),
-                            const SizedBox(height: 24),
-                            if (filtered.isEmpty && _selectedFilter != 'All')
-                              _buildEmptyFilterState()
-                            else
-                              ListView.separated(
-                                physics: const NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                itemBuilder: (_, i) =>
-                                    _buildNotificationTile(filtered[i]),
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 12),
-                                itemCount: filtered.length,
-                              ),
-                          ],
+                child:
+                    allNotifications.isEmpty
+                        ? _buildEmptyState()
+                        : SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              _buildStatsCards(allNotifications),
+                              const SizedBox(height: 24),
+                              _buildSmartAlertsCard(),
+                              const SizedBox(height: 24),
+                              _buildFilterTabs(allNotifications),
+                              const SizedBox(height: 24),
+                              if (filtered.isEmpty && _selectedFilter != 'All')
+                                _buildEmptyFilterState()
+                              else
+                                ListView.separated(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  shrinkWrap: true,
+                                  itemBuilder:
+                                      (_, i) =>
+                                          _buildNotificationTile(filtered[i]),
+                                  separatorBuilder:
+                                      (_, __) => const SizedBox(height: 12),
+                                  itemCount: filtered.length,
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
               ),
             ],
           );
@@ -104,7 +107,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<AlertModel> _getFilteredNotifications(List<AlertModel> notifications) {
     switch (_selectedFilter) {
       case 'Today':
-        return notifications.where((n) => n.payload == 'expiring_today').toList();
+        return notifications
+            .where((n) => n.payload == 'expiring_today')
+            .toList();
       case 'Soon':
         return notifications
             .where((n) => n.payload == 'expiring_in_two_days')
@@ -137,7 +142,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           automaticallyImplyLeading: false,
           title: Text(
-            'Eatsoon',
+            'Eatsooon',
             style: GoogleFonts.nunito(
               fontWeight: FontWeight.w600,
               color: AppTheme.secondaryColor,
@@ -252,16 +257,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Row(
       children: [
         Expanded(
-            child: _buildStatCard(
-                'Today', todayCount.toString(), const Color(0xFFEF4444))),
+          child: _buildStatCard(
+            'Today',
+            todayCount.toString(),
+            const Color(0xFFEF4444),
+          ),
+        ),
         const SizedBox(width: 16),
         Expanded(
-            child: _buildStatCard(
-                'Soon', soonCount.toString(), const Color(0xFFF59E0B))),
+          child: _buildStatCard(
+            'Soon',
+            soonCount.toString(),
+            const Color(0xFFF59E0B),
+          ),
+        ),
         const SizedBox(width: 16),
         Expanded(
-            child: _buildStatCard('All', notifications.length.toString(),
-                const Color(0xFF2563EB))),
+          child: _buildStatCard(
+            'All',
+            notifications.length.toString(),
+            const Color(0xFF2563EB),
+          ),
+        ),
       ],
     );
   }
@@ -274,9 +291,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2))
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -321,8 +339,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       child: const Row(
         children: [
-          Icon(Icons.lightbulb_outline,
-              color: AppTheme.primaryColor, size: 40),
+          Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor, size: 40),
           SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -331,9 +348,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Text(
                   'Smart Expiry Alerts',
                   style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold),
+                    fontFamily: 'Nunito',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
@@ -343,7 +361,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     fontSize: 14,
                     color: Color(0xFF6B7280),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -368,11 +386,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             count = notifications.length;
           } else if (filter == 'Today') {
             count =
-                notifications.where((n) => n.payload == 'expiring_today').length;
+                notifications
+                    .where((n) => n.payload == 'expiring_today')
+                    .length;
           } else if (filter == 'Soon') {
-            count = notifications
-                .where((n) => n.payload == 'expiring_in_two_days')
-                .length;
+            count =
+                notifications
+                    .where((n) => n.payload == 'expiring_in_two_days')
+                    .length;
           }
 
           return GestureDetector(
@@ -383,15 +404,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             },
             child: Container(
               margin: const EdgeInsets.only(right: 12),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 color: isSelected ? AppTheme.primaryColor : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected
-                      ? AppTheme.primaryColor
-                      : const Color(0xFFE5E7EB),
+                  color:
+                      isSelected
+                          ? AppTheme.primaryColor
+                          : const Color(0xFFE5E7EB),
                 ),
               ),
               child: Text(
@@ -450,11 +471,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 64,
-            color: Color(0xFF9CA3AF),
-          ),
+          Icon(Icons.check_circle_outline, size: 64, color: Color(0xFF9CA3AF)),
           SizedBox(height: 12),
           Text(
             'All Clear!',
@@ -484,38 +501,44 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final date = n.timestamp.toDate();
     final bool isUrgent = n.payload == 'expiring_today';
     final bool isSoon = n.payload == 'expiring_in_two_days';
-    final Color iconBgColor = isUrgent
-        ? const Color(0xFFFEE2E2)
-        : isSoon
+    final Color iconBgColor =
+        isUrgent
+            ? const Color(0xFFFEE2E2)
+            : isSoon
             ? const Color(0xFFFEF3C7)
             : const Color(0xFFDBEAFE);
-    final IconData icon = isUrgent
-        ? Icons.error_outline
-        : isSoon
+    final IconData icon =
+        isUrgent
+            ? Icons.error_outline
+            : isSoon
             ? Icons.access_time
             : Icons.notifications_none;
-    final Color iconColor = isUrgent
-        ? const Color(0xFFDC2626)
-        : isSoon
+    final Color iconColor =
+        isUrgent
+            ? const Color(0xFFDC2626)
+            : isSoon
             ? const Color(0xFFD97706)
             : const Color(0xFF2563EB);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14.4),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 2.4,
-              offset: const Offset(0, 1.2),
-            ),
-          ],
-          border: Border(
-            left: BorderSide(
-                color: n.read ? Colors.transparent : iconColor, width: 4),
-          )),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2.4,
+            offset: const Offset(0, 1.2),
+          ),
+        ],
+        border: Border(
+          left: BorderSide(
+            color: n.read ? Colors.transparent : iconColor,
+            width: 4,
+          ),
+        ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -549,7 +572,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     if (isUrgent || isSoon)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: iconBgColor,
                           borderRadius: BorderRadius.circular(6),

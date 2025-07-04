@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:eat_soon/features/home/presentation/widgets/custom_app_bar.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:async';
+import 'package:get/get.dart';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});
@@ -136,7 +137,7 @@ class _RecipesScreenState extends State<RecipesScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
-      appBar: const CustomAppBar(title: 'Eatsoon'),
+      appBar: const CustomAppBar(title: 'Eatsooon'),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -150,11 +151,15 @@ class _RecipesScreenState extends State<RecipesScreen>
                 }
 
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'recipes_error'.trArgs([snapshot.error.toString()]),
+                    ),
+                  );
                 }
 
                 if (_filteredRecipes.isEmpty) {
-                  return const Center(child: Text('No recipes found'));
+                  return Center(child: Text('recipes_no_results'.tr));
                 }
 
                 return ListView.builder(
@@ -184,11 +189,11 @@ class _RecipesScreenState extends State<RecipesScreen>
         ),
         child: TextField(
           controller: _searchController,
-          decoration: const InputDecoration(
-            hintText: 'Search recipes...',
-            prefixIcon: Icon(Icons.search),
+          decoration: InputDecoration(
+            hintText: 'recipes_search_hint'.tr,
+            prefixIcon: const Icon(Icons.search),
             border: InputBorder.none,
-            contentPadding: EdgeInsets.all(16),
+            contentPadding: const EdgeInsets.all(16),
           ),
         ),
       ),
@@ -204,14 +209,14 @@ class _RecipesScreenState extends State<RecipesScreen>
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF7DD3FC)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.info_outline, color: Color(0xFF0C4A6E)),
-          SizedBox(width: 12),
+          const Icon(Icons.info_outline, color: Color(0xFF0C4A6E)),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'No expiring items found. Showing some easy recipe ideas to get you started!',
-              style: TextStyle(
+              'recipes_fallback_notice'.tr,
+              style: const TextStyle(
                 color: Color(0xFF0C4A6E),
                 fontWeight: FontWeight.w500,
               ),
@@ -294,7 +299,7 @@ class _RecipesScreenState extends State<RecipesScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                recipe.category.toUpperCase(),
+                _translateCategory(recipe.category).toUpperCase(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10,
@@ -349,17 +354,17 @@ class _RecipesScreenState extends State<RecipesScreen>
               _buildStatItem(
                 Icons.timer_outlined,
                 recipe.cookTime,
-                'Cook Time',
+                'recipes_cook_time'.tr,
               ),
               _buildStatItem(
                 Icons.people_alt_outlined,
                 recipe.servings,
-                'Servings',
+                'recipes_servings'.tr,
               ),
               _buildStatItem(
                 Icons.star_border_rounded,
-                recipe.difficulty,
-                'Difficulty',
+                _translateDifficulty(recipe.difficulty),
+                'recipes_difficulty'.tr,
               ),
             ],
           ),
@@ -368,13 +373,13 @@ class _RecipesScreenState extends State<RecipesScreen>
             children: [
               if (!_isUsingFallback && recipe.usedIngredientCount > 0)
                 _buildIngredientChip(
-                  '${recipe.usedIngredientCount} Used',
+                  '${recipe.usedIngredientCount} ${'recipes_used'.tr}',
                   Colors.green.shade100,
                   Colors.green.shade800,
                 ),
               if (!_isUsingFallback && recipe.missedIngredientCount > 0)
                 _buildIngredientChip(
-                  '${recipe.missedIngredientCount} Missing',
+                  '${recipe.missedIngredientCount} ${'recipes_missing'.tr}',
                   Colors.red.shade100,
                   Colors.red.shade800,
                 ),
@@ -398,9 +403,9 @@ class _RecipesScreenState extends State<RecipesScreen>
                     vertical: 10,
                   ),
                 ),
-                child: const Text(
-                  'View Recipe',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
+                child: Text(
+                  'recipes_view_recipe'.tr,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
             ],
@@ -465,5 +470,25 @@ class _RecipesScreenState extends State<RecipesScreen>
             ),
       ),
     );
+  }
+
+  // Helper to translate recipe category names
+  String _translateCategory(String category) {
+    final key = 'recipe_cat_${category.toLowerCase().replaceAll(' ', '_')}';
+    final translated = key.tr;
+    return translated == key ? category : translated;
+  }
+
+  // Helper to translate difficulty values (Easy/Medium/Hard)
+  String _translateDifficulty(String difficulty) {
+    final map = {
+      'easy': 'recipes_diff_easy',
+      'medium': 'recipes_diff_medium',
+      'hard': 'recipes_diff_hard',
+    };
+    final key = map[difficulty.toLowerCase()];
+    if (key == null) return difficulty;
+    final translated = key.tr;
+    return translated == key ? difficulty : translated;
   }
 }

@@ -13,6 +13,7 @@ import 'package:eat_soon/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:eat_soon/features/family/presentation/widgets/family_switcher.dart';
 import 'package:eat_soon/shared/widgets/recent_activity.dart';
+import 'package:get/get.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
-      appBar: const CustomAppBar(title: 'Eatsoon'),
+      appBar: const CustomAppBar(title: 'Eatsooon'),
       body: SafeArea(
         child: StreamBuilder<List<FoodItem>>(
           stream: _itemsStream,
@@ -88,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 32),
                   // Recent Activity
                   RecentActivity(
-                    title: 'Recent Activity',
+                    title: 'home_recent_activity'.tr,
                     stream: _activityService.getActivitiesStream(limit: 3),
                     showUserAvatars: true,
                     onViewAll: () {
@@ -121,9 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Icon(Icons.error_outline, size: 64, color: Color(0xFFEF4444)),
           const SizedBox(height: 16),
-          const Text(
-            'Error loading data',
-            style: TextStyle(
+          Text(
+            'home_error_loading_data'.tr,
+            style: const TextStyle(
               fontFamily: 'Inter',
               fontWeight: FontWeight.w500,
               fontSize: 16,
@@ -139,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: const Color(0xFF10B981),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Retry'),
+            child: Text('home_retry'.tr),
           ),
         ],
       ),
@@ -151,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Expanded(
           child: _buildStatCard(
-            title: 'Expiring\nSoon',
+            title: 'home_expiring_soon'.tr,
             value: '${statistics['expiring'] ?? 0}',
             valueColor: const Color(0xFFEF4444),
             backgroundColor: const Color(0xFFFFFFFF),
@@ -166,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(width: 19.2),
         Expanded(
           child: _buildStatCard(
-            title: 'Total Items',
+            title: 'home_total_items'.tr,
             value: '${statistics['total'] ?? 0}',
             valueColor: const Color(0xFF10B981),
             backgroundColor: const Color(0xFFFFFFFF),
@@ -277,9 +278,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
+        Text(
+          'home_quick_actions'.tr,
+          style: const TextStyle(
             fontFamily: 'Nunito',
             fontWeight: FontWeight.w600,
             fontSize: 18,
@@ -327,9 +328,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 20,
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Scan Product',
-                          style: TextStyle(
+                        Text(
+                          'home_scan_product'.tr,
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -382,9 +383,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 20,
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Recipe Suggestions',
-                          style: TextStyle(
+                        Text(
+                          'home_recipe_suggestions'.tr,
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -444,9 +445,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'No Family Connected',
-                  style: TextStyle(
+                Text(
+                  'home_no_family_connected'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -454,9 +455,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Create or join a family to share your pantry',
-                  style: TextStyle(
+                Text(
+                  'home_family_subtitle'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     color: Color(0xFF6B7280),
@@ -483,9 +484,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Get Started',
-                      style: TextStyle(
+                    child: Text(
+                      'home_get_started'.tr,
+                      style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -541,7 +542,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Error loading members',
+                          'home_error_loading_members'.tr,
                           style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 14,
@@ -559,9 +560,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Container(
                     height: 80,
                     alignment: Alignment.center,
-                    child: const Text(
-                      'No family members found',
-                      style: TextStyle(
+                    child: Text(
+                      'home_no_family_members'.tr,
+                      style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         color: Color(0xFF6B7280),
@@ -607,7 +608,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${members.length} Family Members',
+                                  'home_family_members_count'.trArgs([
+                                    members.length.toString(),
+                                  ]),
                                   style: const TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 14,
@@ -615,9 +618,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: Color(0xFF111827),
                                   ),
                                 ),
-                                const Text(
-                                  'Sharing pantry together',
-                                  style: TextStyle(
+                                Text(
+                                  'home_sharing_pantry'.tr,
+                                  style: const TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 12,
                                     color: Color(0xFF6B7280),
@@ -635,9 +638,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: const Color(0xFF10B981),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
-                              'Active',
-                              style: TextStyle(
+                            child: Text(
+                              'home_active'.tr,
+                              style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,

@@ -122,7 +122,7 @@ class AuthService {
   }
 
   // Update user profile
-  Future<void> updateUserProfile({required String name}) async {
+  Future<void> updateUserProfile({required String name, String? bio}) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -135,6 +135,7 @@ class AuthService {
       // Update Firestore user document
       await _firestore.collection('users').doc(user.uid).update({
         'name': name,
+        if (bio != null) 'bio': bio,
         'lastLoginAt': FieldValue.serverTimestamp(),
       });
 
@@ -187,12 +188,17 @@ class AuthService {
   }
 
   // Save user data to Firestore
-  Future<void> _saveUserToFirestore(User user, String name) async {
+  Future<void> _saveUserToFirestore(
+    User user,
+    String name, {
+    String? bio,
+  }) async {
     await _firestore.collection('users').doc(user.uid).set({
       'uid': user.uid,
       'name': name,
       'email': user.email,
       'photoURL': user.photoURL,
+      if (bio != null) 'bio': bio,
       'createdAt': FieldValue.serverTimestamp(),
       'lastLoginAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));

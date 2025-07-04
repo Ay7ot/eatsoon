@@ -1,6 +1,7 @@
 import 'package:eat_soon/core/theme/app_theme.dart';
 import 'package:eat_soon/features/auth/presentation/widgets/custom_textfield.dart';
 import 'package:eat_soon/features/auth/providers/auth_provider.dart';
+import 'package:get/get.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -69,27 +70,27 @@ class _SignupScreenState extends State<SignupScreen>
 
   String? _validateName(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter your name';
+      return 'signup_name_required'.tr;
     }
     return null;
   }
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter your email';
+      return 'signup_email_required'.tr;
     }
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Please enter a valid email';
+      return 'signup_email_invalid'.tr;
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter your password';
+      return 'signup_password_required'.tr;
     }
     if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return 'signup_password_short'.tr;
     }
     return null;
   }
@@ -108,9 +109,7 @@ class _SignupScreenState extends State<SignupScreen>
         // Show success message and navigate to login or home
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'Account created successfully! Please check your email for verification.',
-            ),
+            content: Text('signup_success'.tr),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -123,7 +122,7 @@ class _SignupScreenState extends State<SignupScreen>
         // This will pop back to login screen where AuthWrapper will take control
         if (mounted) Navigator.of(context).pop();
       } else {
-        final errorMessage = authProvider.errorMessage ?? 'Signup failed';
+        final errorMessage = authProvider.errorMessage ?? 'signup_failed'.tr;
         debugPrint('Signup Error: $errorMessage');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -159,19 +158,19 @@ class _SignupScreenState extends State<SignupScreen>
                     child: Image.asset('assets/images/logo.png', height: 100),
                   ),
                   const SizedBox(height: 40),
-                  Text('Create Account', style: AppTheme.headingStyle),
+                  Text('signup_title'.tr, style: AppTheme.headingStyle),
                   const SizedBox(height: 8),
-                  Text('Sign up to get started!', style: AppTheme.captionStyle),
+                  Text('signup_subtitle'.tr, style: AppTheme.captionStyle),
                   const SizedBox(height: 30),
                   CustomTextField(
-                    hintText: 'Enter Name',
+                    hintText: 'signup_name_hint'.tr,
                     controller: _nameController,
                     validator: _validateName,
                     focusNode: _nameFocusNode,
                   ),
                   const SizedBox(height: 20),
                   CustomTextField(
-                    hintText: 'Enter Email',
+                    hintText: 'signup_email_hint'.tr,
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     validator: _validateEmail,
@@ -179,7 +178,7 @@ class _SignupScreenState extends State<SignupScreen>
                   ),
                   const SizedBox(height: 20),
                   CustomTextField(
-                    hintText: 'Enter password',
+                    hintText: 'signup_password_hint'.tr,
                     controller: _passwordController,
                     isPassword: !_isPasswordVisible,
                     focusNode: _passwordFocusNode,
@@ -211,8 +210,8 @@ class _SignupScreenState extends State<SignupScreen>
                                     ),
                                   ),
                                 )
-                                : const Text(
-                                  'Create Account',
+                                : Text(
+                                  'signup_create_button'.tr,
                                   style: TextStyle(
                                     fontSize: 18,
                                     color: Colors.white,
@@ -228,13 +227,13 @@ class _SignupScreenState extends State<SignupScreen>
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        "Already have an account?",
+                        'signup_already_have_account'.tr,
                         style: AppTheme.bodyStyle,
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
                         child: Text(
-                          'Log in',
+                          'signup_login'.tr,
                           style: AppTheme.bodyStyle.copyWith(
                             fontWeight: FontWeight.bold,
                             color: AppTheme.secondaryColor,

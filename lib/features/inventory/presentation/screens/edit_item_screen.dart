@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
 import 'package:intl/intl.dart';
 import 'package:eat_soon/features/home/models/food_item.dart';
+import 'package:get/get.dart';
 
 class EditItemScreen extends StatefulWidget {
   final FoodItem item;
@@ -98,7 +99,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
             ),
             automaticallyImplyLeading: false,
             title: Text(
-              'Eatsoon',
+              'Eatsooon',
               style: GoogleFonts.nunito(
                 fontWeight: FontWeight.w600,
                 color: AppTheme.secondaryColor,
@@ -150,7 +151,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                     children: [
                       const SizedBox(height: 24),
                       _buildFormField(
-                        label: 'Product Name',
+                        label: 'field_product_name'.tr,
                         controller: _productNameController,
                         icon: Icons.shopping_bag_outlined,
                         isRequired: true,
@@ -163,7 +164,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                       ),
                       const SizedBox(height: 16),
                       _buildFormField(
-                        label: 'Expiry Date',
+                        label: 'field_expiry_date'.tr,
                         controller: _expiryDateController,
                         icon: Icons.calendar_today_outlined,
                         isRequired: true,
@@ -183,7 +184,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                         children: [
                           Expanded(
                             child: _buildDropdownField(
-                              label: 'Category',
+                              label: 'field_category'.tr,
                               value: _selectedCategory,
                               icon: Icons.category_outlined,
                               items: _categoryItems,
@@ -197,7 +198,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildFormField(
-                              label: 'Quantity',
+                              label: 'field_quantity'.tr,
                               controller: _quantityController,
                               icon: Icons.numbers,
                               isRequired: true,
@@ -218,7 +219,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                         children: [
                           Expanded(
                             child: _buildDropdownField(
-                              label: 'Unit',
+                              label: 'field_unit'.tr,
                               value: _selectedUnit,
                               icon: Icons.straighten,
                               items: const [
@@ -241,7 +242,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildDropdownField(
-                              label: 'Storage',
+                              label: 'field_storage'.tr,
                               value: _selectedLocation,
                               icon: Icons.kitchen_outlined,
                               items: const [
@@ -260,7 +261,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                       ),
                       const SizedBox(height: 16),
                       _buildFormField(
-                        label: 'Notes (Optional)',
+                        label: 'field_notes_optional'.tr,
                         controller: _notesController,
                         icon: Icons.note_outlined,
                         maxLines: 3,
@@ -292,9 +293,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                  : const Text(
-                                    'Save Changes',
-                                    style: TextStyle(
+                                  : Text(
+                                    'edit_item_save_changes'.tr,
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
@@ -346,9 +347,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Edit Item',
-                  style: TextStyle(
+                Text(
+                  'inventory_edit_item'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -356,9 +357,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                     height: 1.3,
                   ),
                 ),
-                const Text(
-                  'Update the item details below',
-                  style: TextStyle(
+                Text(
+                  'edit_item_update_details'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
@@ -517,7 +518,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   return DropdownMenuItem(
                     value: item,
                     child: Text(
-                      item,
+                      _translateOption(item),
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
@@ -578,11 +579,11 @@ class _EditItemScreenState extends State<EditItemScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Item updated successfully!'),
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text('edit_item_updated_success'.tr),
               ],
             ),
             backgroundColor: const Color(0xFF10B981),
@@ -602,7 +603,11 @@ class _EditItemScreenState extends State<EditItemScreen> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Expanded(child: Text('Failed to update item: ${e.toString()}')),
+                Expanded(
+                  child: Text(
+                    '${'edit_item_failed_update'.tr}: ${e.toString()}',
+                  ),
+                ),
               ],
             ),
             backgroundColor: Colors.red,
@@ -624,5 +629,16 @@ class _EditItemScreenState extends State<EditItemScreen> {
 
   DateTime _parseExpiryDate(String dateString) {
     return DateFormat('MM/dd/yyyy').parse(dateString);
+  }
+
+  String _translateOption(String raw) {
+    final slug = raw.toLowerCase().replaceAll(RegExp('[^a-z]'), '');
+    const prefixes = ['cat_', 'unit_', 'store_'];
+    for (final p in prefixes) {
+      final key = p + slug;
+      final t = key.tr;
+      if (t != key) return t;
+    }
+    return raw;
   }
 }

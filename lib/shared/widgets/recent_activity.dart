@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:eat_soon/features/home/models/activity_model.dart';
+import 'package:get/get.dart';
 
 /// Enhanced RecentActivity widget with modern design and improved UX
 class RecentActivity extends StatelessWidget {
@@ -53,9 +54,9 @@ class RecentActivity extends StatelessWidget {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text(
-                    'View All',
-                    style: TextStyle(
+                  child: Text(
+                    'recent_view_all'.tr,
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -188,9 +189,9 @@ class RecentActivity extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Failed to load activity',
-            style: TextStyle(
+          Text(
+            'recent_failed_load'.tr,
+            style: const TextStyle(
               fontFamily: 'Inter',
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -242,9 +243,9 @@ class RecentActivity extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'No Activity Yet',
-            style: TextStyle(
+          Text(
+            'recent_no_activity_yet'.tr,
+            style: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -253,7 +254,7 @@ class RecentActivity extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            emptyMessage,
+            emptyMessage.tr,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: 'Inter',
@@ -334,9 +335,9 @@ class RecentActivity extends StatelessWidget {
     final activityDate = DateTime(date.year, date.month, date.day);
 
     if (activityDate == today) {
-      return 'Today';
+      return 'today'.tr;
     } else if (activityDate == yesterday) {
-      return 'Yesterday';
+      return 'yesterday'.tr;
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
@@ -394,10 +395,10 @@ class _EnhancedActivityItem extends StatelessWidget {
                 Row(
                   children: [
                     // Subtitle on the left
-                    if (activity.subtitle.isNotEmpty)
+                    if (activity.i18nSubtitle.isNotEmpty)
                       Expanded(
                         child: Text(
-                          activity.subtitle,
+                          activity.i18nSubtitle,
                           style: const TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w400,
@@ -468,7 +469,7 @@ class _EnhancedActivityItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          activity.title,
+          activity.i18nTitle,
           style: const TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,

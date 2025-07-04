@@ -13,6 +13,7 @@ import 'package:eat_soon/features/home/models/activity_model.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:eat_soon/shared/widgets/recent_activity.dart';
+import 'package:get/get.dart';
 
 class FamilyMembersScreen extends StatefulWidget {
   const FamilyMembersScreen({super.key});
@@ -67,7 +68,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
           ),
           automaticallyImplyLeading: false,
           title: Text(
-            'Eatsoon',
+            'Eatsooon',
             style: GoogleFonts.nunito(
               fontWeight: FontWeight.w600,
               color: AppTheme.secondaryColor,
@@ -133,13 +134,13 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Family Members',
-                  style: TextStyle(
+                  'family_members_title'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -148,8 +149,8 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                   ),
                 ),
                 Text(
-                  'Manage your family and view invitations',
-                  style: TextStyle(
+                  'family_members_subtitle'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
@@ -205,9 +206,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'No Family Yet',
-              style: TextStyle(
+            Text(
+              'family_members_no_family'.tr,
+              style: const TextStyle(
                 fontFamily: 'Nunito',
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -216,10 +217,10 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Create a family to share and manage your pantry with others.',
+            Text(
+              'family_members_no_family_desc'.tr,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -242,9 +243,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Create Family',
-                  style: TextStyle(
+                child: Text(
+                  'family_members_create'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -267,9 +268,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                     side: const BorderSide(color: Color(0xFFD1D5DB)),
                   ),
                 ),
-                child: const Text(
-                  'Enter Invitation Code',
-                  style: TextStyle(
+                child: Text(
+                  'family_members_enter_code'.tr,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -333,9 +334,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                         ),
                         const SizedBox(height: 20),
                         // Title
-                        const Text(
-                          'Create Family',
-                          style: TextStyle(
+                        Text(
+                          'family_members_create_dialog_title'.tr,
+                          style: const TextStyle(
                             fontFamily: 'Nunito',
                             fontWeight: FontWeight.w700,
                             fontSize: 20,
@@ -343,10 +344,10 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Enter a name for your new family to begin sharing your pantry.',
+                        Text(
+                          'family_members_create_dialog_desc'.tr,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 16,
                             color: Color(0xFF6B7280),
@@ -358,16 +359,16 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                           key: _formKey,
                           child: TextFormField(
                             controller: nameController,
-                            decoration: const InputDecoration(
-                              hintText: 'Family Name',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              hintText: 'family_members_family_name'.tr,
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Please enter a family name';
+                                return 'family_members_name_required'.tr;
                               }
                               if (value.trim().length < 3) {
-                                return 'Family name must be at least 3 characters';
+                                return 'family_members_name_short'.tr;
                               }
                               return null;
                             },
@@ -393,8 +394,8 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                     ),
                                   ),
                                 ),
-                                child: const Text(
-                                  'Cancel',
+                                child: Text(
+                                  'family_members_cancel'.tr,
                                   style: TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 16,
@@ -429,11 +430,12 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                               ScaffoldMessenger.of(
                                                 context,
                                               ).showSnackBar(
-                                                const SnackBar(
+                                                SnackBar(
                                                   content: Text(
-                                                    'Family created successfully!',
+                                                    'family_members_created_success'
+                                                        .tr,
                                                   ),
-                                                  backgroundColor: Color(
+                                                  backgroundColor: const Color(
                                                     0xFF10B981,
                                                   ),
                                                 ),
@@ -446,7 +448,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                               ).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
-                                                    'Failed to create family: $e',
+                                                    'family_members_create_failed'
+                                                            .tr +
+                                                        e.toString(),
                                                   ),
                                                   backgroundColor: Colors.red,
                                                 ),
@@ -481,9 +485,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                             color: Colors.white,
                                           ),
                                         )
-                                        : const Text(
-                                          'Create',
-                                          style: TextStyle(
+                                        : Text(
+                                          'family_members_create'.tr,
+                                          style: const TextStyle(
                                             fontFamily: 'Inter',
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
@@ -730,7 +734,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
           _buildMembersSection(familyId),
           const SizedBox(height: 32),
           RecentActivity(
-            title: 'Recent Family Activity',
+            title: 'family_members_recent_activity'.tr,
             stream: ActivityService().getFamilyActivitiesStream(
               familyId,
               limit: 5,
@@ -790,7 +794,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               const SizedBox(height: 16),
               // Family Name
               Text(
-                family?.name ?? 'Loading...',
+                family?.name ?? 'family_members_loading'.tr,
                 style: const TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: 20,
@@ -802,8 +806,10 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               // Family Description
               Text(
                 family != null
-                    ? 'Managing pantry together since ${_formatDate(family.createdAt)}'
-                    : 'Loading family details...',
+                    ? 'family_members_managing_pantry'.trArgs([
+                      _formatDate(family.createdAt),
+                    ])
+                    : 'family_members_loading_details'.tr,
                 style: const TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
@@ -843,7 +849,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               Expanded(
                 child: _buildStatItem(
                   value: memberCount.toString(),
-                  label: 'Members',
+                  label: 'family_members_members'.tr,
                   color: const Color(0xFF10B981),
                 ),
               ),
@@ -862,7 +868,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                             .length;
                     return _buildStatItem(
                       value: itemsAdded.toString(),
-                      label: 'Items\nAdded',
+                      label: 'family_members_items_added'.tr,
                       color: const Color(0xFF3B82F6),
                     );
                   },
@@ -911,9 +917,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Family Members',
-          style: TextStyle(
+        Text(
+          'family_members_family_members'.tr,
+          style: const TextStyle(
             fontFamily: 'Nunito',
             fontWeight: FontWeight.w600,
             fontSize: 18,
@@ -933,14 +939,22 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
             if (snapshot.hasError) {
               return Padding(
                 padding: const EdgeInsets.all(32),
-                child: Center(child: Text('Error: ${snapshot.error}')),
+                child: Center(
+                  child: Text(
+                    'family_members_error_loading'.trArgs([
+                      snapshot.error.toString(),
+                    ]),
+                  ),
+                ),
               );
             }
             final members = snapshot.data ?? [];
             if (members.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: Text('No family members found.')),
+              return Padding(
+                padding: const EdgeInsets.all(32),
+                child: Center(
+                  child: Text('family_members_no_members_found'.tr),
+                ),
               );
             }
 
@@ -995,7 +1009,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _showCreateFamilyDialog(),
                 icon: const Icon(Icons.home_work_outlined, size: 18),
-                label: const Text('New Family'),
+                label: Text('family_members_new_family'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
@@ -1021,7 +1035,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _showInviteMemberDialog(familyId),
                 icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                label: const Text('Invite Member'),
+                label: Text('family_members_invite_member'.tr),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF10B981),
                   side: const BorderSide(color: Color(0xFF10B981)),
@@ -1119,7 +1133,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Joined ${_getTimeAgo(member.joinedAt)}',
+                        'family_members_joined'.trArgs([
+                          _getTimeAgo(member.joinedAt),
+                        ]),
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 11,
@@ -1259,13 +1275,33 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+      if (difference.inDays == 1) {
+        return 'family_members_day_ago'.trArgs([difference.inDays.toString()]);
+      } else {
+        return 'family_members_days_ago'.trArgs([difference.inDays.toString()]);
+      }
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+      if (difference.inHours == 1) {
+        return 'family_members_hour_ago'.trArgs([
+          difference.inHours.toString(),
+        ]);
+      } else {
+        return 'family_members_hours_ago'.trArgs([
+          difference.inHours.toString(),
+        ]);
+      }
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+      if (difference.inMinutes == 1) {
+        return 'family_members_minute_ago'.trArgs([
+          difference.inMinutes.toString(),
+        ]);
+      } else {
+        return 'family_members_minutes_ago'.trArgs([
+          difference.inMinutes.toString(),
+        ]);
+      }
     } else {
-      return 'Just now';
+      return 'family_members_just_now'.tr;
     }
   }
 
@@ -1318,9 +1354,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                         ),
                         const SizedBox(height: 20),
                         // Title
-                        const Text(
-                          'Invite Family Member',
-                          style: TextStyle(
+                        Text(
+                          'family_members_invite_dialog_title'.tr,
+                          style: const TextStyle(
                             fontFamily: 'Nunito',
                             fontWeight: FontWeight.w700,
                             fontSize: 20,
@@ -1328,10 +1364,10 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Enter the email address of the person you\'d like to invite to your family.',
+                        Text(
+                          'family_members_invite_dialog_desc'.tr,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 16,
                             color: Color(0xFF6B7280),
@@ -1346,7 +1382,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                             keyboardType: TextInputType.emailAddress,
                             enabled: !isLoading,
                             decoration: InputDecoration(
-                              hintText: 'Enter email address',
+                              hintText: 'family_members_email_address'.tr,
                               prefixIcon: const Icon(Icons.email_outlined),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -1360,12 +1396,12 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Please enter an email address';
+                                return 'family_members_email_required'.tr;
                               }
                               if (!RegExp(
                                 r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                               ).hasMatch(value.trim())) {
-                                return 'Please enter a valid email address';
+                                return 'family_members_email_invalid'.tr;
                               }
                               return null;
                             },
@@ -1391,8 +1427,8 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                     ),
                                   ),
                                 ),
-                                child: const Text(
-                                  'Cancel',
+                                child: Text(
+                                  'family_members_cancel'.tr,
                                   style: TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 16,
@@ -1428,11 +1464,12 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                               ScaffoldMessenger.of(
                                                 context,
                                               ).showSnackBar(
-                                                const SnackBar(
+                                                SnackBar(
                                                   content: Text(
-                                                    'Invitation sent successfully!',
+                                                    'family_members_invite_sent'
+                                                        .tr,
                                                   ),
-                                                  backgroundColor: Color(
+                                                  backgroundColor: const Color(
                                                     0xFF10B981,
                                                   ),
                                                 ),
@@ -1445,7 +1482,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                               ).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
-                                                    'Failed to send invitation: $e',
+                                                    'family_members_invite_failed'
+                                                            .tr +
+                                                        e.toString(),
                                                   ),
                                                   backgroundColor: Colors.red,
                                                 ),
@@ -1480,9 +1519,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                             color: Colors.white,
                                           ),
                                         )
-                                        : const Text(
-                                          'Send Invite',
-                                          style: TextStyle(
+                                        : Text(
+                                          'family_members_send_invite'.tr,
+                                          style: const TextStyle(
                                             fontFamily: 'Inter',
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
@@ -1547,9 +1586,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                         ),
                         const SizedBox(height: 20),
                         // Title
-                        const Text(
-                          'Remove Family Member',
-                          style: TextStyle(
+                        Text(
+                          'family_members_remove_dialog_title'.tr,
+                          style: const TextStyle(
                             fontFamily: 'Nunito',
                             fontWeight: FontWeight.w700,
                             fontSize: 20,
@@ -1559,7 +1598,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                         const SizedBox(height: 8),
                         // Content
                         Text(
-                          'Are you sure you want to remove ${member.displayName} from this family? They will lose access to the shared pantry and all family data.',
+                          'family_members_remove_dialog_desc'.trArgs([
+                            member.displayName,
+                          ]),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontFamily: 'Inter',
@@ -1588,8 +1629,8 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                     ),
                                   ),
                                 ),
-                                child: const Text(
-                                  'Cancel',
+                                child: Text(
+                                  'family_members_cancel'.tr,
                                   style: TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 16,
@@ -1622,7 +1663,10 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                               ).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
-                                                    '${member.displayName} has been removed from the family.',
+                                                    'family_members_removed_success'
+                                                        .trArgs([
+                                                          member.displayName,
+                                                        ]),
                                                   ),
                                                   backgroundColor: const Color(
                                                     0xFF10B981,
@@ -1638,7 +1682,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                               ).showSnackBar(
                                                 SnackBar(
                                                   content: Text(
-                                                    'Failed to remove member: $e',
+                                                    'family_members_remove_failed'
+                                                            .tr +
+                                                        e.toString(),
                                                   ),
                                                   backgroundColor: Colors.red,
                                                 ),
@@ -1673,8 +1719,8 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                                             color: Colors.white,
                                           ),
                                         )
-                                        : const Text(
-                                          'Remove',
+                                        : Text(
+                                          'family_members_remove'.tr,
                                           style: TextStyle(
                                             fontFamily: 'Inter',
                                             fontSize: 16,

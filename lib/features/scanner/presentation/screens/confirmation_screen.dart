@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:eat_soon/features/inventory/data/services/inventory_service.dart';
 import 'package:eat_soon/features/home/services/activity_service.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   final String? scannedImagePath;
@@ -60,8 +61,19 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     _quantityController = TextEditingController(text: '1');
     _notesController = TextEditingController();
 
-    // Log scan activity when screen is initialized
-    _logScanActivity();
+    // Log scan activity only if we arrived via an actual scan (i.e. we have
+    // some detected data). Simply opening the Scan screen should not record
+    // a scan.
+    final hasScanData =
+        (widget.scannedImagePath != null) ||
+        (widget.detectedProductName != null &&
+            widget.detectedProductName!.isNotEmpty) ||
+        (widget.detectedExpiryDate != null &&
+            widget.detectedExpiryDate!.isNotEmpty);
+
+    if (hasScanData) {
+      _logScanActivity();
+    }
   }
 
   void _logScanActivity() {
@@ -103,7 +115,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
             ),
             automaticallyImplyLeading: false,
             title: Text(
-              'Eatsoon',
+              'Eatsooon',
               style: GoogleFonts.nunito(
                 fontWeight: FontWeight.w600,
                 color: AppTheme.secondaryColor,
@@ -216,7 +228,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Confirm Product Details',
+                  'confirm_title'.tr,
                   style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 18,
@@ -226,7 +238,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   ),
                 ),
                 Text(
-                  'Review and edit before adding to pantry',
+                  'confirm_subtitle'.tr,
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
@@ -255,14 +267,12 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   context: context,
                   builder:
                       (context) => AlertDialog(
-                        title: const Text('Product Confirmation Help'),
-                        content: const Text(
-                          'Review the detected product information and make any necessary corrections before adding it to your pantry. Auto-detected fields are highlighted in green.',
-                        ),
+                        title: Text('confirm_help_title'.tr),
+                        content: Text('confirm_help_description'.tr),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Got it'),
+                            child: Text('confirm_got_it'.tr),
                           ),
                         ],
                       ),
@@ -318,8 +328,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
               children: [
                 Text(
                   hasDetectedData
-                      ? 'Product Detected Successfully!'
-                      : 'Manual Entry Mode',
+                      ? 'confirm_detected'.tr
+                      : 'confirm_manual_mode'.tr,
                   style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 18,
@@ -331,8 +341,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 const SizedBox(height: 4),
                 Text(
                   hasDetectedData
-                      ? 'Review and confirm the details below'
-                      : 'Enter product details manually',
+                      ? 'confirm_review_details'.tr
+                      : 'confirm_enter_manually'.tr,
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
@@ -389,9 +399,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Product Details',
-                      style: TextStyle(
+                    Text(
+                      'confirm_product_details_header'.tr,
+                      style: const TextStyle(
                         fontFamily: 'Nunito',
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -400,9 +410,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Review and edit the information below',
-                      style: TextStyle(
+                    Text(
+                      'confirm_review_edit_info'.tr,
+                      style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -436,9 +446,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                               color: Color(0xFF10B981),
                             ),
                             const SizedBox(width: 4),
-                            const Text(
-                              'AI-detected fields',
-                              style: TextStyle(
+                            Text(
+                              'confirm_ai_detected_fields'.tr,
+                              style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -459,7 +469,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
           // Form Fields
           _buildFormField(
-            label: 'Product Name',
+            label: 'field_product_name'.tr,
             controller: _productNameController,
             icon: Icons.shopping_bag_outlined,
             isDetected: widget.detectedProductName?.isNotEmpty ?? false,
@@ -469,7 +479,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           const SizedBox(height: 16),
 
           _buildFormField(
-            label: 'Expiry Date',
+            label: 'field_expiry_date'.tr,
             controller: _expiryDateController,
             icon: Icons.calendar_today_outlined,
             isDetected: widget.detectedExpiryDate?.isNotEmpty ?? false,
@@ -491,7 +501,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
             children: [
               Expanded(
                 child: _buildDropdownField(
-                  label: 'Category',
+                  label: 'field_category'.tr,
                   value: _selectedCategory,
                   icon: Icons.category_outlined,
                   items: const [
@@ -514,7 +524,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildFormField(
-                  label: 'Quantity',
+                  label: 'field_quantity'.tr,
                   controller: _quantityController,
                   icon: Icons.numbers,
                   isRequired: true,
@@ -531,7 +541,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
             children: [
               Expanded(
                 child: _buildDropdownField(
-                  label: 'Unit',
+                  label: 'field_unit'.tr,
                   value: _selectedUnit,
                   icon: Icons.straighten,
                   items: const [
@@ -552,7 +562,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildDropdownField(
-                  label: 'Storage',
+                  label: 'field_storage'.tr,
                   value: _selectedLocation,
                   icon: Icons.kitchen_outlined,
                   items: ['Refrigerator', 'Freezer', 'Pantry', 'Counter'],
@@ -566,7 +576,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
           // Notes Field
           _buildFormField(
-            label: 'Notes (Optional)',
+            label: 'field_notes_optional'.tr,
             controller: _notesController,
             icon: Icons.note_outlined,
             maxLines: 3,
@@ -584,6 +594,17 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     final bool hasOcrTextDetection =
         widget.detectedExpiryDate?.isNotEmpty ?? false;
     final bool hasProductName = widget.detectedProductName?.isNotEmpty ?? false;
+
+    // Format detected expiry date for consistent display
+    String formattedDetectedExpiry = '';
+    if (hasOcrTextDetection) {
+      final parsedDate = _tryParseExpiryDate(widget.detectedExpiryDate!.trim());
+      if (parsedDate != null) {
+        formattedDetectedExpiry = _formatDateForDisplay(parsedDate);
+      } else {
+        formattedDetectedExpiry = widget.detectedExpiryDate!;
+      }
+    }
 
     // No need to show the card if nothing was detected (for manual entry)
     if (!hasBarcodeDetection && !hasOcrTextDetection && !hasProductName) {
@@ -621,9 +642,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Detection Results',
-                style: TextStyle(
+              Text(
+                'confirm_detection_results'.tr,
+                style: const TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -637,63 +658,46 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
           // Show the actual detection results with accurate status icons
           _buildDetectionItem(
-            'Barcode Detection',
+            'confirm_barcode_detection'.tr,
             hasBarcodeDetection
-                ? 'Product matched via database lookup'
-                : 'No barcode detected or recognized',
+                ? 'confirm_barcode_matched'.tr
+                : 'confirm_barcode_none'.tr,
             Icons.qr_code_scanner,
             hasBarcodeDetection,
           ),
           const SizedBox(height: 12),
           _buildDetectionItem(
-            'Text Recognition',
+            'confirm_text_recognition'.tr,
             hasOcrTextDetection
-                ? 'Expiry date found: ${widget.detectedExpiryDate}'
-                : 'No expiry date detected on packaging',
+                ? 'confirm_expiry_found'.trArgs([formattedDetectedExpiry])
+                : 'confirm_expiry_none'.tr,
             Icons.text_fields,
             hasOcrTextDetection,
           ),
           const SizedBox(height: 12),
           _buildDetectionItem(
-            'Product Name',
+            'field_product_name'.tr,
             hasProductName
-                ? 'Identified: ${widget.detectedProductName}'
-                : 'No product name identified',
+                ? 'confirm_name_identified'.trArgs([
+                  widget.detectedProductName ?? '',
+                ])
+                : 'confirm_name_none'.tr,
             Icons.text_format,
             hasProductName,
           ),
 
           // Add information about how detection works
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: Color(0xFF6B7280),
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Missing information? You can manually enter any details that weren\'t automatically detected.',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF6B7280),
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              ],
+          Expanded(
+            child: Text(
+              'confirm_missing_info'.tr,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF6B7280),
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -913,6 +917,17 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     required ValueChanged<String?> onChanged,
     bool isRequired = false,
   }) {
+    String _translateOption(String raw) {
+      String slug = raw.toLowerCase().replaceAll(RegExp('[^a-z]'), '');
+      final List<String> prefixes = ['cat_', 'unit_', 'store_'];
+      for (final p in prefixes) {
+        final key = p + slug;
+        final translated = key.tr;
+        if (translated != key) return translated; // key exists in map
+      }
+      return raw; // fallback
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -955,7 +970,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   return DropdownMenuItem(
                     value: item,
                     child: Text(
-                      item,
+                      _translateOption(item),
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
@@ -1051,7 +1066,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Text('$productName added to pantry!'),
+                Text('confirm_item_added'.trArgs([productName])),
               ],
             ),
             backgroundColor: const Color(0xFF10B981),
@@ -1131,9 +1146,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                           size: 22,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Add to Pantry',
-                          style: TextStyle(
+                        Text(
+                          'confirm_add_pantry_button'.tr,
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -1172,7 +1187,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Scan Again',
+                  'confirm_scan_again'.tr,
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 18,

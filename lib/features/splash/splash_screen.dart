@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: const Text(
-                  'E A T S O O N',
+                  'E A T S O O O N',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 32,

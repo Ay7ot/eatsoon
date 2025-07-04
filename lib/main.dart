@@ -11,6 +11,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:eat_soon/features/notifications/services/notification_service.dart';
 import 'package:eat_soon/features/notifications/services/background_service.dart';
+import 'package:eat_soon/l10n/app_translations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Import your app components (these will be created later)
 // import 'core/router/app_router.dart';
@@ -44,11 +46,23 @@ Future<void> main() async {
     debugPrint('Error activating App Check: $e');
   }
 
-  runApp(const EatSoonApp());
+  // Retrieve saved locale
+  final prefs = await SharedPreferences.getInstance();
+  final savedCode = prefs.getString('locale');
+  Locale? startLocale;
+  if (savedCode != null) {
+    final parts = savedCode.split('_');
+    if (parts.isNotEmpty) {
+      startLocale = Locale(parts[0], parts.length > 1 ? parts[1] : '');
+    }
+  }
+
+  runApp(EatSoonApp(startLocale: startLocale));
 }
 
 class EatSoonApp extends StatelessWidget {
-  const EatSoonApp({super.key});
+  final Locale? startLocale;
+  const EatSoonApp({super.key, this.startLocale});
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +73,9 @@ class EatSoonApp extends StatelessWidget {
       ],
       child: GetMaterialApp(
         title: 'Eat Soon',
+        translations: AppTranslations(),
+        locale: startLocale ?? Get.deviceLocale ?? const Locale('en', 'US'),
+        fallbackLocale: const Locale('en', 'US'),
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const AuthWrapper(),

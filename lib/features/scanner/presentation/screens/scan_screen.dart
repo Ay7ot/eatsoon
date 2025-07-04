@@ -6,6 +6,7 @@ import 'package:eat_soon/features/scanner/data/services/ml_kit_service.dart';
 import 'package:eat_soon/features/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:get/get.dart';
 
 // -------------------------------------------------------------
 // Scan workflow steps: product scan first, optional expiry date scan
@@ -39,16 +40,18 @@ class _ScanScreenState extends State<ScanScreen>
   // Dynamic UI helpers -------------------------------------------------------
   String get _instructionText {
     if (_cameraInitializationFailed) {
-      return 'Camera failed to start. This often happens after unlocking your phone. Use the restart button above to fix this.';
+      return 'scan_camera_failed_instruction'.tr;
     }
     if (_scanMode == _ScanMode.expiryDate) {
-      return 'Expiry date not detected. Please focus on the expiry / "best before" date and scan again.';
+      return 'scan_expiry_instruction'.tr;
     }
-    return 'Position the product label within the frame. The app will automatically detect barcodes and expiry dates using AI.';
+    return 'scan_product_instruction'.tr;
   }
 
   String get _scanButtonLabel =>
-      _scanMode == _ScanMode.expiryDate ? 'Scan Expiry Date' : 'Scan Product';
+      _scanMode == _ScanMode.expiryDate
+          ? 'scan_button_scan_expiry'.tr
+          : 'scan_button_scan_product'.tr;
 
   // Keep state alive to prevent camera reinitialization when switching tabs
   @override
@@ -153,7 +156,7 @@ class _ScanScreenState extends State<ScanScreen>
           setState(() {
             _cameraInitializationFailed = true;
           });
-          _showErrorSnackBar('No cameras available on this device');
+          _showErrorSnackBar('scan_no_cameras'.tr);
         }
       }
     } catch (e) {
@@ -163,7 +166,7 @@ class _ScanScreenState extends State<ScanScreen>
           _isCameraInitialized = false;
           _cameraInitializationFailed = true;
         });
-        _showErrorSnackBar('Camera failed to start. Try the restart button.');
+        _showErrorSnackBar('scan_camera_failed_start'.tr);
       }
     }
   }
@@ -263,9 +266,7 @@ class _ScanScreenState extends State<ScanScreen>
             setState(() {
               _scanMode = _ScanMode.expiryDate;
             });
-            _showErrorSnackBar(
-              'Expiry date not detected. Please scan the expiry / "best before" section.',
-            );
+            _showErrorSnackBar('scan_expiry_not_detected'.tr);
           } else {
             // We have all we need – proceed to confirmation.
             await _pauseCameraAndNavigate(
@@ -277,7 +278,9 @@ class _ScanScreenState extends State<ScanScreen>
             );
           }
         } else {
-          _showErrorSnackBar(scanResult.errorMessage ?? 'Scanning failed');
+          _showErrorSnackBar(
+            scanResult.errorMessage ?? 'scan_scanning_failed'.tr,
+          );
         }
       }
     } catch (e) {
@@ -338,7 +341,9 @@ class _ScanScreenState extends State<ScanScreen>
     } catch (e) {
       debugPrint('Expiry date scan error: $e');
       if (mounted && !_isDisposed) {
-        _showErrorSnackBar('Failed to scan expiry date: $e');
+        _showErrorSnackBar(
+          'scan_failed_scan_expiry_date'.trArgs([e.toString()]),
+        );
         // Proceed to confirmation without expiry date
         await _pauseCameraAndNavigate(
           detectedProductName: _initialScanResult?.productName,
@@ -445,7 +450,7 @@ class _ScanScreenState extends State<ScanScreen>
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
-      appBar: const CustomAppBar(title: 'Eatsoon'),
+      appBar: const CustomAppBar(title: 'Eatsooon'),
       body: _buildScanView(),
     );
   }
@@ -491,8 +496,8 @@ class _ScanScreenState extends State<ScanScreen>
                             size: 48,
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Camera initialization failed',
+                          Text(
+                            'scan_camera_failed_title'.tr,
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 16,
@@ -501,8 +506,8 @@ class _ScanScreenState extends State<ScanScreen>
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'This can happen after unlocking your phone',
+                          Text(
+                            'scan_camera_failed_subtitle'.tr,
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 14,
@@ -525,12 +530,12 @@ class _ScanScreenState extends State<ScanScreen>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.refresh, size: 20),
-                                SizedBox(width: 8),
-                                Text('Restart Camera'),
+                                const Icon(Icons.refresh, size: 20),
+                                const SizedBox(width: 8),
+                                Text('scan_restart_camera'.tr),
                               ],
                             ),
                           ),
@@ -538,14 +543,16 @@ class _ScanScreenState extends State<ScanScreen>
                       ),
                     )
                   else
-                    const Center(
+                    Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircularProgressIndicator(color: Color(0xFF10B981)),
-                          SizedBox(height: 16),
+                          const CircularProgressIndicator(
+                            color: Color(0xFF10B981),
+                          ),
+                          const SizedBox(height: 16),
                           Text(
-                            'Initializing camera...',
+                            'scan_initializing_camera'.tr,
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 16,
@@ -562,27 +569,27 @@ class _ScanScreenState extends State<ScanScreen>
                     Positioned.fill(
                       child: Container(
                         color: Colors.black.withOpacity(0.7),
-                        child: const Center(
+                        child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircularProgressIndicator(
+                              const CircularProgressIndicator(
                                 color: Color(0xFF10B981),
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Text(
-                                'Scanning product...',
-                                style: TextStyle(
+                                'scan_scanning_product'.tr,
+                                style: const TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.white,
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Text(
-                                'Detecting barcodes and expiry dates',
-                                style: TextStyle(
+                                'scan_detecting_barcodes'.tr,
+                                style: const TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
@@ -714,8 +721,8 @@ class _ScanScreenState extends State<ScanScreen>
                       vertical: 6,
                     ), // Reduced padding
                   ),
-                  child: const Text(
-                    'Enter product manually',
+                  child: Text(
+                    'scan_enter_manual'.tr,
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 14,
