@@ -136,7 +136,7 @@ class _ScanScreenState extends State<ScanScreen>
 
         _cameraController = CameraController(
           _cameras![0],
-          ResolutionPreset.low, // Use low resolution to reduce buffer usage
+          ResolutionPreset.high, // Increased resolution for a clearer preview
           enableAudio: false,
           imageFormatGroup: ImageFormatGroup.jpeg,
         );

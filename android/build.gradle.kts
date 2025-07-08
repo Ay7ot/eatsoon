@@ -4,8 +4,13 @@ allprojects {
         mavenCentral()
     }
     // Exclude deprecated firebase-iid to avoid duplicate classes with firebase-messaging
+    // configurations.all {
+    //     exclude(group = "com.google.firebase", module = "firebase-iid")
+    // }
     configurations.all {
-        exclude(group = "com.google.firebase", module = "firebase-iid")
+        resolutionStrategy {
+            force("com.google.firebase:firebase-iid:21.1.0")
+        }
     }
 }
 
