@@ -14,13 +14,6 @@ import 'package:eat_soon/features/notifications/services/background_service.dart
 import 'package:eat_soon/l10n/app_translations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Import your app components (these will be created later)
-// import 'core/router/app_router.dart';
-// import 'features/inventory/providers/inventory_provider.dart';
-// import 'features/scanner/providers/scanner_provider.dart';
-// import 'features/notifications/providers/notification_provider.dart';
-// import 'features/recipes/providers/recipe_provider.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
